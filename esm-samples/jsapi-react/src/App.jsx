@@ -24,13 +24,13 @@ function App() {
       basemap: 'streets',
     });
 
-    const cemeteryLocation = [-97.726203, 30.266041];
+    const cemeteryLocation = [-97.726293, 30.266041];
 
     const view = new MapView({
       container: mapDiv.current,
       map: map,
       center: cemeteryLocation,
-      rotation: 67 - 90, // Rotate the view to 0 degrees
+      rotation: 68 - 90, // Rotate the view to 0 degrees
       constraints: {
         minZoom: 16,
         maxZoom: 22, // Set the max zoom level to 19
@@ -103,14 +103,14 @@ function App() {
 
       boundaryBoxLayer.removeAll();
       // Define two points for distance calculation
-      const pointTopLeft = { longitude: -97.726299, latitude: 30.268062 };
-      const pointTopRight = { longitude: -97.724537, latitude: 30.267431 };
+      const pointTopLeft = { longitude: -97.726090, latitude: 30.268050 };
+      const pointTopRight = { longitude: -97.724530, latitude: 30.268050 };
 
       // Calculate the geodesic distance between the two points in meters
       const distanceWidthMeters = calculateDistance(pointTopLeft, pointTopRight)
 
       
-      const pointBottomLeft = { type: 'point', longitude: -97.726299, latitude: 30.265062 };
+      const pointBottomLeft = { type: 'point', longitude: -97.726299, latitude: 30.265053 };
       const distanceHeightMeters = calculateDistance(pointTopLeft, pointBottomLeft)
 
 
