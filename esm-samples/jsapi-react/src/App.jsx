@@ -10,18 +10,23 @@ import mapImage from './map.jpg';
 import * as geodesicUtils from "@arcgis/core/geometry/support/geodesicUtils.js";
 import Point from '@arcgis/core/geometry/Point';
 import PopupTemplate from '@arcgis/core/PopupTemplate';
+import RouteParameters from "@arcgis/core/rest/support/RouteParameters.js";
+import FeatureSet from "@arcgis/core/rest/support/FeatureSet.js";
+import * as route from "@arcgis/core/rest/route.js";
 
 
 import "./App.css";
 
 function App() {
 
+  //const [overlay, setOverlay] = React.useState(true);
   const mapDiv = useRef(null);
 
   useEffect(() => {
    // Create a map and view
    const map = new WebMap({
       basemap: 'streets',
+      
     });
 
     const cemeteryLocation = [-97.726293, 30.266041];
@@ -43,7 +48,7 @@ function App() {
     map.add(userPositionLayer);
 
     const boundaryBoxLayer = new GraphicsLayer();
-    boundaryBoxLayer.opacity = 0.3;
+    
     map.add(boundaryBoxLayer);
 
     const gravesLayer = new GraphicsLayer();
@@ -100,8 +105,11 @@ function App() {
     }
 
     const addMapImage = () => {
-
+      
+      // get value of query param overlay
+      const hide_overlay = new URLSearchParams(window.location.search).get('hide_overlay');
       boundaryBoxLayer.removeAll();
+      boundaryBoxLayer.opacity = hide_overlay ? 0 : 0.3;
       // Define two points for distance calculation
       const pointTopLeft = { longitude: -97.726090, latitude: 30.268050 };
       const pointTopRight = { longitude: -97.724530, latitude: 30.268050 };
@@ -255,6 +263,8 @@ function App() {
     });
 
     view.on('click', (event) => {
+
+      //addStop(event);
       // Get the clicked location's coordinates
       const clickedPoint = view.toMap({ x: event.x, y: event.y });
       const latitude = clickedPoint.latitude.toFixed(6);
@@ -299,6 +309,67 @@ function App() {
     }
   );
 
+  // Point the URL to a valid routing service
+  
+
+
+  // const routeParams = new RouteParameters({
+  //   // An authorization string used to access the routing service
+  //   apiKey: "###",
+  //   stops: new FeatureSet(),
+  //   outSpatialReference: {
+  //     // autocasts as new SpatialReference()
+  //     wkid: 3857
+  //   }
+  // });
+  // const routeLayer = new GraphicsLayer();
+  // map.add(routeLayer);
+  
+  const stopsLayer = new GraphicsLayer();
+  map.add(stopsLayer);
+  // Define the symbology used to display the stops
+  const stopSymbol = {
+  type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+  style: "cross",
+  size: 15,
+  outline: {
+    // autocasts as new SimpleLineSymbol()
+    width: 4
+  }
+};
+
+// Define the symbology used to display the route
+const routeSymbol = {
+  type: "simple-line", // autocasts as SimpleLineSymbol()
+  color: [0, 0, 255, 0.5],
+  width: 5
+};
+
+
+function addStop(event) {
+  // Add a point at the location of the map click
+  const stop = new Graphic({
+    geometry: event.mapPoint,
+    symbol: stopSymbol
+  });
+  routeLayer.add(stop);
+
+  // Execute the route if 2 or more stops are input
+  routeParams.stops.features.push(stop);
+  if (routeParams.stops.features.length >= 2) {
+    route.solve(routeUrl, routeParams).then(showRoute);
+  }
+}
+
+  function showRoute(data) {
+    const routeResult = data.routeResults[0].route;
+    routeResult.symbol = routeSymbol;
+    stopsLayer.add(routeResult);
+  }
+
+  
+  
+
   // Clean up the watchPosition when the component is unmounted
   return () => {
     navigator.geolocation.clearWatch(watchId);
@@ -307,6 +378,7 @@ function App() {
   }, [mapDiv]);
 
   return (<div className="wrapper">
+    {/* <button onClick={ e => setOverlay(!overlay) }>Overlay Toggle</button> */}
     {/* <div className="toolbar">
       <div>You are looking for: <strong>Section 1 &rdquo; Row 3 &rdquo; Plot 2</strong></div>
       <div>Currently navigating to: Section 1</div>
