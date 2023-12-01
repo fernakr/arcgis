@@ -8,6 +8,7 @@ export default defineConfig({
   
   plugins: [react(), basicSsl()],
   build: {
+    base: '/arcgis/',
     chunkSizeWarningLimit: 2000
   },
   server: {   
