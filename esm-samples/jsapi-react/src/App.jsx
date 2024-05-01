@@ -86,8 +86,8 @@ function App() {
       });
 
       featureLayers.forEach(function(featureLayer) {
-
-        if (featureLayer.title === 'Graves') {
+        //console.log('featureLayer', featureLayer.title);
+        if (featureLayer.title.includes('Graves')) {
           graveLayer = featureLayer;
           // update rendererer - set opacity based off value
 
