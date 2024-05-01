@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vanilla JavaScript App</title>
+  <!-- Include ArcGIS API -->
+  <link rel="stylesheet" href="https://js.arcgis.com/4.24/esri/themes/light/main.css">
+  <script src="https://js.arcgis.com/4.24/"></script>
+</head>
+<body>
+  <div class="wrapper">
+    <button id="filterBtn">Filter</button>
+    <div class="mapDiv" id="mapDiv"></div>
+  </div>
+
+  <script>
+        require([
+    "esri/config",
+    "esri/WebMap",
+    "esri/views/MapView",
+    "esri/Map",
+    "esri/layers/FeatureLayer",
+    "esri/widgets/Expand",
+    "esri/core/reactiveUtils"
+    ], (esriConfig, WebMap, MapView, Map, FeatureLayer, Expand, reactiveUtils) => {
+    // Define variables
+    let filterValue = false;
+    let graveLayer;
+    let map;
+
+    // Function to update filter
+    const updateFilter = () => {
+      filterValue = !filterValue;
+      if (graveLayer) {
+        graveLayer.definitionExpression = filterValue ? "status = 'occupied'" : null;
+      }
+      console.log('Filter:', filterValue);
+    };
+
+    esriConfig.apiKey = "AAPK1603870d3538472fb7f6c4d1accdec01rx8QfJvj3jb-IW_qiJR_dYdKvNMFUSvt1HQOWd7OjMFMiuUtCVBmUwyLHuDAxRkx";
+
+map = new WebMap({
+  portalItem: {
+    id: 'b8fbdd2f710e4414844565206609892e'
+  },
+  basemap: 'arcgis-navigation'
+});
+
+const cemeteryLocation = [-97.726293, 30.266041];
+
+const view = new MapView({
+  container: 'mapDiv',
+  map: map,
+  center: cemeteryLocation,
+  rotation: 68 - 90,
+  constraints: {
+    minZoom: 16,
+    maxZoom: 22
+  },
+  zoom: 17
+});
+
+view.when(() => {
+  const layers = map.layers.toArray();
+
+  // Filter feature layers
+  const featureLayers = layers.filter(layer => layer instanceof esri.FeatureLayer);
+
+  featureLayers.forEach(layer => {
+    if (layer.title === 'Graves') {
+      graveLayer = layer;
+    }
+  });
+
+  if (graveLayer) {
+    graveLayer.popupTemplate = {
+      title: '{name}',
+      content: [{
+        type: "fields",
+        fieldInfos: [{
+          fieldName: "birthdate",
+          label: "Birth Date"
+        }]
+      }, {
+        type: "media",
+        mediaInfos: [{
+          title: "<b>Headshot</b>",
+          type: "image",
+          caption: "Headshot description here",
+          value: {
+            sourceURL: "{headshot}"
+          }
+        }]
+      }]
+    }
+  }
+});
+
+view.watch('zoom', () => {
+  // Handle zoom change
+});
+
+view.on('pointer-leave', () => {
+  document.body.style.cursor = "auto";
+});
+});
+  </script>
+</body>
+</html>

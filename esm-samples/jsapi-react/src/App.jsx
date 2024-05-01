@@ -15,6 +15,9 @@ import WebMap from "@arcgis/core/WebMap";
 // import * as route from "@arcgis/core/rest/route.js";
 import esriConfig from '@arcgis/core/config.js';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
+import UniqueValueRenderer from '@arcgis/core/renderers/UniqueValueRenderer';
+import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
+import Legend from '@arcgis/core/widgets/Legend';
 // import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 // import Color from '@arcgis/core/Color';
 
@@ -24,14 +27,25 @@ import "./App.css";
 
 function App() {
 
-  const [overlay, setOverlay] = React.useState(false);
+  const [filterValue, setFilterValue] = React.useState(false);
+  const [gravesView, setGravesView] = React.useState(null);
   const mapDiv = useRef(null);
+  
+  let graveLayer, activeLayer;
+  let map;
+  //let filterExpression = null;
+
+  /* The commented out `updateFilter` function is intended to toggle the visibility of a layer on the
+  map based on a filter condition. Here's a breakdown of what the function does: */
+  
+
+
 
   useEffect(() => {
    // Create a map and view
    esriConfig.apiKey = "AAPK1603870d3538472fb7f6c4d1accdec01rx8QfJvj3jb-IW_qiJR_dYdKvNMFUSvt1HQOWd7OjMFMiuUtCVBmUwyLHuDAxRkx";
-  
-   const map = new WebMap({
+   
+   map = new WebMap({
       portalItem: {
         id: 'b8fbdd2f710e4414844565206609892e'
       },
@@ -59,6 +73,8 @@ function App() {
       zoom: 17, // Set your desired zoom level
     });
 
+    
+
     view.when(() => {
 
 
@@ -69,42 +85,58 @@ function App() {
         return layer instanceof FeatureLayer;
       });
 
-      // const plotholders = [
-      //   {
-      //     objectId: 1,
-      //     name: 'Firstname Lastname',
-      //     birthdate: '03/11/1959',
-      //     description: 'This is a description of the plot holder',
-      //   },
-      //   {
-      //     objectId: 2,
-      //     name: 'Kristine Fernandez',
-      //     birthdate: '03/11/1959',
-      //     description: 'This is a description of the plot holder',
-      //   }
-      // ]
-
-
-      //let graveLayer;      
-      
-      // const getPlotTitle = (feature) => {        
-      //   const objectId = feature.graphic.attributes.OBJECTID;
-      //   //console.log(feature.graphic.attributes)
-      //   const plotholder = plotholders.find(plotholder => plotholder.objectId === objectId);
-      //   return plotholder ? plotholder.name : 'Vacant Plot';
-      // }
-
-      // const getPlotContent = (feature) => {
-      //   const objectId = feature.graphic.attributes.OBJECTID;        
-      //   const plotholder = plotholders.find(plotholder => plotholder.objectId === objectId);
-      //   return plotholder ? plotholder.birthdate : 'Vacant Plot';
-      // }
-      // Query each feature layer
       featureLayers.forEach(function(featureLayer) {
 
         if (featureLayer.title === 'Graves') {
+          graveLayer = featureLayer;
+          // update rendererer - set opacity based off value
+
+          // set the renderer update fill color based off status
+          // Create a unique value renderer
+          var renderer = new UniqueValueRenderer({
+            field: "status",
+            //defaultSymbol: fillSymbol,
+            uniqueValueInfos: [{
+                value: "occupied",
+                symbol: new SimpleFillSymbol({
+                  color: "green"
+                }),
+                label: "Occupied"
+              },
+              {
+                value: "vacant",
+                symbol: new SimpleFillSymbol({
+                  color: "yellow"
+                }),
+                label: "Vacant"
+              },
+              // Add more unique values as needed
+            ]
+          });
+
+          // Set the renderer to the feature layer
+          featureLayer.renderer = renderer;
+          var legend = new Legend({
+            view: view,
+            layerInfos: [{
+              layer: featureLayer,
+              title: "Legend"
+            }]
+          });
+        
+          // Add the legend to the view
+          view.ui.add(legend, "bottom-right");
+        
+          view.whenLayerView(graveLayer).then((layerView) => {
+            // flash flood warnings layer loaded
+            // get a reference to the flood warnings layerview
+            //console.log('layerView', layerView);
+            setGravesView(layerView);
+            //gravesView = layerView;
+          });
+      
           // add images to the feature layer
-          featureLayer.popupTemplate = {
+          graveLayer.popupTemplate = {
             title: '{name}',
             content: [{
               type: "fields", // Autocast as new FieldsContent()
@@ -132,46 +164,17 @@ function App() {
                 }
               }]
             }]
-          }
+          }                    
+
         }
-        //   graveLayer = featureLayer;
-        //   graveLayer.popupTemplate = {
-        //     title: getPlotTitle,
-        //     content: getPlotContent,
-        //     fieldInfos: [
-        //       {
-        //         fieldName: 'OBJECTID',
-        //         visible: false
-        //       }
-        //     ]
-        //   };
-        //   // query features
-          
-        //   // graveLayer.queryFeatures().then(function(results) {
-        //   //   // loop through features
-        //   //   results.features.forEach(function(feature) {
-        //   //     // do something with the feature
-        //   //     // get the plot holder
-
-        //   //     const objectId = feature.attributes.OBJECTID;
-        //   //     const plotholder = plotholders.find(plotholder => plotholder.objectId === objectId);
-        //   //     if (plotholder){
-        //   //       feature.attributes.name = plotholder.name;
-        //   //       feature.attributes.birthdate = plotholder.birthdate;
-        //   //     }else{
-        //   //       console.log('overlay', setOverlay);
-        //   //       // remove this feature from being visible
-
-
-        //   //     }
-
-        //   //   });
-        //   // });
-        // }
-           
+        
 
         
       });
+      
+
+      
+
 
    
     });
@@ -184,66 +187,31 @@ function App() {
     view.on('pointer-leave', (event) => {
       document.body.style.cursor = "auto";
     });
-    // view.on('pointer-move', (event) => {
-
-    //   view.hitTest(event).then((response) => {
-    //     if (response.results && response.results.length > 0) {
-    //       const clickedGraphic = response.results[0]?.graphic;
-    //       console.log(clickedGraphic);
-    //       //document.body.style.cursor = clickedGraphic && markerGraphics.includes(clickedGraphic) ? "pointer" : "auto";
-          
-    //     } else{
-    //       document.body.style.cursor = "auto";
-    //     }
-    //   });
-    // });
-
-    view.on('click', (event) => {
-
-      view.hitTest(event).then((response) => {
-        //console.log(response.results);
-        // const clickedGraphic = response.results[0]?.graphic;
-
-        // console.log(clickedGraphic);
-
-        // if (clickedGraphic) {
-        //   // The clicked graphic is one of the markers
-        //   // Open the popup for the clicked marker
-        //   view.popup.open({
-        //     //content: 'test',
-        //     features: [clickedGraphic],
-        //     location: event.mapPoint,
-        //   });
-        // }
-      });
-
-
-      
-    });
-
-
-
-    // Use the browser's Geolocation API to continuously watch for changes in position
-    const watchId = navigator.geolocation.watchPosition(
-    (position) => {
-      
-    },
-    (error) => {
-      console.error('Error getting GPS location:', error.message);
-    }
-  );
-
-  
-
-  // Clean up the watchPosition when the component is unmounted
-  return () => {
-    navigator.geolocation.clearWatch(watchId);
-  };
-  
+    
   }, [mapDiv]);
 
+  useEffect(() => {
+    let filterExpression = filterValue ? "status = 'occupied'" : null;
+    //console.log(gravesView);
+    if (gravesView){      
+      gravesView.filter = {
+        where: filterExpression
+      };
+      //console.log('view', gravesView);
+    }    
+  }, [filterValue, gravesView]);
+
+  // useEffect(() => {
+  //   // find gravelayer
+  //   // 
+  //   console.log(graveLayer);
+  //   if (graveLayer) {
+  //     console.log('filter', filterExpression);
+  //     graveLayer.definitionExpression = filterExpression;
+  //   }
+  // }, [filterValue, graveLayer]);
   return (<div className="wrapper">
-     <button onClick={ e => setOverlay(!overlay) }>Filter</button> 
+     <button onClick={ e => setFilterValue(!filterValue) }>Filter</button> 
     
     <div className="mapDiv" ref={mapDiv}></div>
   </div>)
