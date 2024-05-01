@@ -69,23 +69,23 @@ function App() {
         return layer instanceof FeatureLayer;
       });
 
-      const plotholders = [
-        {
-          objectId: 1,
-          name: 'Firstname Lastname',
-          birthdate: '03/11/1959',
-          description: 'This is a description of the plot holder',
-        },
-        {
-          objectId: 2,
-          name: 'Kristine Fernandez',
-          birthdate: '03/11/1959',
-          description: 'This is a description of the plot holder',
-        }
-      ]
+      // const plotholders = [
+      //   {
+      //     objectId: 1,
+      //     name: 'Firstname Lastname',
+      //     birthdate: '03/11/1959',
+      //     description: 'This is a description of the plot holder',
+      //   },
+      //   {
+      //     objectId: 2,
+      //     name: 'Kristine Fernandez',
+      //     birthdate: '03/11/1959',
+      //     description: 'This is a description of the plot holder',
+      //   }
+      // ]
 
 
-      let graveLayer;      
+      //let graveLayer;      
       
       // const getPlotTitle = (feature) => {        
       //   const objectId = feature.graphic.attributes.OBJECTID;
