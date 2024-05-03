@@ -3,8 +3,8 @@ import React, { useRef, useEffect } from "react";
 //import Expand from '@arcgis/core/widgets/Expand';
 import MapView from "@arcgis/core/views/MapView";
 import WebMap from "@arcgis/core/WebMap";
-// import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
-// import Graphic from '@arcgis/core/Graphic';
+import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
+import Graphic from '@arcgis/core/Graphic';
 // import PictureMarkerSymbol from '@arcgis/core/symbols/PictureMarkerSymbol';
 // import mapImage from './map.jpg';
 // import * as geodesicUtils from "@arcgis/core/geometry/support/geodesicUtils.js";
@@ -68,14 +68,16 @@ function App() {
       map: map,
       center: cemeteryLocation,
       rotation: 68 - 90, // Rotate the view to 0 degrees
-      constraints: {
-        minZoom: 16,
-        maxZoom: 22, // Set the max zoom level to 19
-      },
+      // constraints: {
+      //   // minZoom: 16,
+      //   // maxZoom: 22, // Set the max zoom level to 19
+      // },
       zoom: 17, // Set your desired zoom level
     });
 
     
+    const userPositionLayer = new GraphicsLayer();
+    map.add(userPositionLayer);
 
     view.when(() => {
 
@@ -127,6 +129,7 @@ function App() {
           });
         
           const fullscreen = new Fullscreen({
+            label: 'Expand',
             view: view
           });
           
@@ -203,6 +206,63 @@ function App() {
     view.on('pointer-leave', (event) => {
       document.body.style.cursor = "auto";
     });
+
+
+    // Function to add a marker for the browser's GPS location
+    const addGPSMarker = (position) => {
+      // Clear previous GPS marker
+      userPositionLayer.removeAll();
+
+      // create a marker with a person icon
+
+
+
+
+      const marker = new Graphic({
+        geometry: {
+          type: 'point',
+          x: position.coords.longitude,
+          y: position.coords.latitude,
+        },
+        symbol: {
+        type: "text", // autocasts as new TextSymbol()
+        color: "#ebab34",
+        text: "\ue675", // esri-icon-user
+        font: {
+          // autocasts as new Font()
+          size: 36,
+          family: "CalciteWebCoreIcons" // Esri Icon Font
+        }
+      },
+      });
+
+      userPositionLayer.add(marker);
+
+      // center map on user location
+      //view.center = [position.coords.longitude, position.coords.latitude];
+      
+    };
+
+    // Use the browser's Geolocation API to continuously watch for changes in position
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        // Add a marker for the browser's GPS location
+        addGPSMarker(position);
+        
+  
+        // Center the view on the updated GPS location
+        //view.center = [position.coords.longitude, position.coords.latitude];
+      },
+      (error) => {
+        console.error('Error getting GPS location:', error.message);
+      }
+    );
+  
+    // Clean up the watchPosition when the component is unmounted
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
+    
     
   }, [mapDiv]);
 
@@ -217,15 +277,7 @@ function App() {
     }    
   }, [filterValue, gravesView]);
 
-  // useEffect(() => {
-  //   // find gravelayer
-  //   // 
-  //   console.log(graveLayer);
-  //   if (graveLayer) {
-  //     console.log('filter', filterExpression);
-  //     graveLayer.definitionExpression = filterExpression;
-  //   }
-  // }, [filterValue, graveLayer]);
+
   return (<div className="wrapper">
     <h1>Search the Map</h1>
      <button onClick={ e => setFilterValue(!filterValue) }>Filter</button> 
