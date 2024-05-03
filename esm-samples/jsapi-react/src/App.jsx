@@ -134,6 +134,10 @@ function App() {
             view: view
           });
 
+          // min/max zoom
+          view.constraints.minZoom = 16;
+          view.constraints.maxZoom = 20;
+
           view.ui.add(compass, "top-left");
           view.ui.add(fullscreen, "top-right");
           // Add the legend to the view
