@@ -19,6 +19,7 @@ import UniqueValueRenderer from '@arcgis/core/renderers/UniqueValueRenderer';
 import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import Legend from '@arcgis/core/widgets/Legend';
 import Fullscreen from '@arcgis/core/widgets/Fullscreen';
+import Compass from '@arcgis/core/widgets/Compass';
 // import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 // import Color from '@arcgis/core/Color';
 
@@ -128,6 +129,12 @@ function App() {
           const fullscreen = new Fullscreen({
             view: view
           });
+          
+          const compass = new Compass({
+            view: view
+          });
+
+          view.ui.add(compass, "top-left");
           view.ui.add(fullscreen, "top-right");
           // Add the legend to the view
           view.ui.add(legend, "bottom-right");
