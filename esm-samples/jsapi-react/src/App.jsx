@@ -18,6 +18,7 @@ import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import UniqueValueRenderer from '@arcgis/core/renderers/UniqueValueRenderer';
 import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import Legend from '@arcgis/core/widgets/Legend';
+import Fullscreen from '@arcgis/core/widgets/Fullscreen';
 // import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 // import Color from '@arcgis/core/Color';
 
@@ -124,6 +125,10 @@ function App() {
             }]
           });
         
+          const fullscreen = new Fullscreen({
+            view: view
+          });
+          view.ui.add(fullscreen, "top-right");
           // Add the legend to the view
           view.ui.add(legend, "bottom-right");
         
@@ -211,6 +216,7 @@ function App() {
   //   }
   // }, [filterValue, graveLayer]);
   return (<div className="wrapper">
+    <h1>Search the Map</h1>
      <button onClick={ e => setFilterValue(!filterValue) }>Filter</button> 
     
     <div className="mapDiv" ref={mapDiv}></div>
