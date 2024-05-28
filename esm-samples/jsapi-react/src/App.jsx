@@ -1,6 +1,5 @@
 import React, { useRef, useEffect } from "react";
-//import Bookmarks from '@arcgis/core/widgets/Bookmarks';
-//import Expand from '@arcgis/core/widgets/Expand';
+
 import MapView from "@arcgis/core/views/MapView";
 import WebMap from "@arcgis/core/WebMap";
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
@@ -22,7 +21,7 @@ import UniqueValueRenderer from '@arcgis/core/renderers/UniqueValueRenderer';
 import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import Legend from '@arcgis/core/widgets/Legend';
 import Fullscreen from '@arcgis/core/widgets/Fullscreen';
-import Compass from '@arcgis/core/widgets/Compass';
+//import Compass from '@arcgis/core/widgets/Compass';
 // import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 // import Color from '@arcgis/core/Color';
 
@@ -35,9 +34,11 @@ function App() {
   const [filterValue, setFilterValue] = React.useState(false);
   const [gravesView, setGravesView] = React.useState(null);
   const mapDiv = useRef(null);
-
+  const [searchedName, setSearchedName] = React.useState('');
+  const [currTab, setCurrTab] = React.useState('map');
   
   let graveLayer;
+  const cemeteryLocation = [-97.726293, 30.266041];
   
   
 
@@ -58,14 +59,14 @@ function App() {
     
   
 
-    const cemeteryLocation = [-97.726293, 30.266041];
+    
 
 
     const view = new MapView({
       container: mapDiv.current,
       map: map,
       center: cemeteryLocation,
-      rotation: 68 - 90, // Rotate the view to 0 degrees
+      rotation: 68 + 180, // Rotate the view to 0 degrees
       // constraints: {
       //   // minZoom: 16,
       //   // maxZoom: 22, // Set the max zoom level to 19
@@ -185,9 +186,6 @@ function App() {
         view: view
       });
       
-      const compass = new Compass({
-        view: view
-      });
 
       var legend = new Legend({
         view: view,
@@ -198,11 +196,11 @@ function App() {
       // view.constraints.minZoom = 16;
       // view.constraints.maxZoom = 20;
 
-      view.ui.add(compass, "top-left");
+      //view.ui.add(compass, "top-left");
       view.ui.add(fullscreen, "top-right");
       // Add the legend to the view
 
-      view.ui.add(legend, "bottom-right");
+      view.ui.add(legend, "bottom-left");
     
 
       
@@ -295,7 +293,7 @@ function App() {
         // });
 
         const userPosition = [position.coords.longitude, position.coords.latitude];
-        const points = [userPosition, [-97.726293, 30.266041]];
+        const points = [userPosition, cemeteryLocation]; // latter to subbed in with currently selected feature if applicable
 
         //console.log('points', points);
         //mapDiv.userPositionLayer.add(marker);
@@ -325,22 +323,50 @@ function App() {
   
       });
     });
-//    console.log(map);
-    //alert('find me');
-    //console.log(userPositionLayer);
 
+  }
+
+  const reset = () => {
+    mapDiv.view.goTo({
+      target: cemeteryLocation,
+      zoom: 17
+    });
   }
     
 
   return (<div className="wrapper">
-    <h1>Search the Map</h1>
-     <button onClick={ e => setFilterValue(!filterValue) }>Filter</button> 
-    <div>
-      <button onClick={findMe}>Find Me</button>
-
+    
+    
+     {/* <button onClick={ e => setFilterValue(!filterValue) }>Filter</button>  */}
+     
+      <div className="grid-container">        
+        <div className="d-flex w-100">
+          <button>Map View</button>
+          <button>List View</button>
+        </div>          
+        {/* <input type="text" onChange={ e => setSearchedName(e.target.value) } /> */}
+        {/* <span>{ searchedName }</span>      
+        <button onClick={findMe}>Find Me</button>   */}
+      </div>    
+      <div className="grid-x grid-margin-x">
+      { currTab === 'map' &&
+          <div className="cell medium-auto">
+            <div className="position-relative">
+              <div className="position-absolute z-1 mt-8 d-flex flex-column gy-3">
+                <button onClick={ e => setFilterValue(!filterValue) }>Filter</button>
+                <button onClick={findMe}>Find Me</button>
+                <button onClick={reset}>Reset</button>
+              </div>            
+              <div className="mapDiv"  ref={mapDiv}></div>
+            </div>
+          </div>
+      }
+      <div className="cell medium-4">
+        List View
+      </div>
     </div>
-    <div className="mapDiv" ref={mapDiv}></div>
   </div>)
 }
+
 
 export default App;
