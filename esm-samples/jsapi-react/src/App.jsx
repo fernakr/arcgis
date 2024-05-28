@@ -256,10 +256,7 @@ function App() {
     }    
   }, [filterValue, gravesView]);
 
-  
-  const addGPSMarker = (position) => {
 
-  }
 
 
   const findMe = () => {
@@ -334,33 +331,43 @@ function App() {
   }
     
 
+  const tabMenu = [
+    {
+      title: 'Map View',
+      id: 'map'
+    },
+    {
+      title: 'List View',
+      id: 'list'
+    }
+  ]
   return (<div className="wrapper">
     
     
      {/* <button onClick={ e => setFilterValue(!filterValue) }>Filter</button>  */}
      
       <div className="grid-container">        
-        <div className="d-flex w-100">
-          <button>Map View</button>
-          <button>List View</button>
+        <div className="d-flex w-100">          
+          { tabMenu.map((tab, index) => (<button className={tab.id === currTab ? 'bg-solid-primary color-white' : ''} onClick={ e => setCurrTab(tab.id)}>{ tab.title }</button>))}
+                  
         </div>          
         {/* <input type="text" onChange={ e => setSearchedName(e.target.value) } /> */}
         {/* <span>{ searchedName }</span>      
         <button onClick={findMe}>Find Me</button>   */}
       </div>    
       <div className="grid-x grid-margin-x">
-      { currTab === 'map' &&
-          <div className="cell medium-auto">
-            <div className="position-relative">
-              <div className="position-absolute z-1 mt-8 d-flex flex-column gy-3">
-                <button onClick={ e => setFilterValue(!filterValue) }>Filter</button>
-                <button onClick={findMe}>Find Me</button>
-                <button onClick={reset}>Reset</button>
-              </div>            
-              <div className="mapDiv"  ref={mapDiv}></div>
-            </div>
-          </div>
-      }
+  
+      <div className={"cell medium-auto " + (currTab !== 'map' ? 'd-none': '')} >
+        <div className="position-relative">
+          <div className="position-absolute z-1 mt-8 d-flex flex-column gy-3">
+            <button onClick={ e => setFilterValue(!filterValue) }>Filter</button>
+            <button onClick={findMe}>Find Me</button>
+            <button onClick={reset}>Reset</button>
+          </div>            
+          <div className="mapDiv"  ref={mapDiv}></div>
+        </div>
+      </div>
+  
       <div className="cell medium-4">
         List View
       </div>
