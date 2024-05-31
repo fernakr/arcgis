@@ -41,9 +41,14 @@ function App() {
   const urlParams = new URLSearchParams(window.location.search);
   const selectedObjectId = urlParams.get('objectId');
   const [resetActive, setResetActive] = React.useState(false);
+  const [keywords, setKeywords] = React.useState('');
+  const fields = ['name', 'birthdate', 'headshot','status', 'OBJECTID'];
+  const listExpressionAppend = 'status = \'occupied\'';
   
   let graveLayer;
   const cemeteryLocation = [-97.726293, 30.266041];
+
+
   
 
 
@@ -100,6 +105,7 @@ function App() {
         //console.log('featureLayer', featureLayer.title);
         if (featureLayer.title.includes('Graves')) {
           graveLayer = featureLayer;
+          graveLayer.outFields = ['*'];
           // update rendererer - set opacity based off value
 
           // set the renderer update fill color based off status
@@ -132,13 +138,13 @@ function App() {
 
           // Set the renderer to the feature layer
           featureLayer.renderer = renderer;
-         
+          
         
           view.whenLayerView(graveLayer).then(async (layerView) => {            
             // after all features are loaaded
             
             await reactiveUtils.whenOnce(() => !layerView.updating);            
-            //alert('test');
+            console.log(layerView);
             createListView(layerView);
             if (selectedObjectId){              
               selectObject(selectedObjectId, layerView);
@@ -248,6 +254,53 @@ function App() {
      
   }, [filterValue]);
 
+  useEffect(() => {
+    if (gravesView){
+      //console.log('name', searchedName);
+      // not case sensitive
+      let filterExpression = null;
+      if (searchedName){
+        filterExpression = searchedName ? "lower(name) LIKE '%" + searchedName.toLowerCase() + "%'" : null;
+      } 
+      
+      gravesView.filter = {
+        where: filterExpression,
+      };
+      gravesView.queryFeatures({
+        where: (searchedName ? (filterExpression + " AND ") : '') + listExpressionAppend,
+        outFields: fields,
+      }).then((response) => {
+        //console.log(response.features.map(feature => feature.attributes));
+        setItems(response.features.map(feature => feature.attributes));
+      });
+    }
+  }, [searchedName]);
+
+  useEffect(() => {
+    if (gravesView){
+
+      let filterExpression = null;
+      if (keywords){          
+          filterExpression = fields.map(field => `lower(${field}) LIKE '%${keywords.toLowerCase()}%'`).join(" OR ");
+      }      
+      gravesView.filter = {
+        where: filterExpression,
+      };
+      gravesView.queryFeatures({
+        where: (keywords ? filterExpression + " AND " : '') + listExpressionAppend,
+        outFields: fields,
+      }).then((response) => {
+        //console.log(response.features.map(feature => feature.attributes));
+        setItems(response.features.map(feature => feature.attributes));
+      });
+    }
+  }, [keywords]);
+
+
+
+
+
+
 
   
 
@@ -255,13 +308,15 @@ function App() {
     let filterExpression = filterValue ? "status = 'occupied'" : null;    
     if (layerView){      
       layerView.filter = {
-        where: filterExpression
+        where: filterExpression,        
+        
       };
       
       layerView.queryFeatures({
-        where: filterExpression,
+        where: listExpressionAppend + (filterExpression ? " AND " + filterExpression : ''),
+        outFields: fields,
       }).then((response) => {
-          
+        //console.log(response.features.map(feature => feature.attributes));
         setItems(response.features.map(feature => feature.attributes));
 
   
@@ -348,8 +403,7 @@ function App() {
       
 
       layerView.queryFeatures({  
-        where: "OBJECTID = " + objectId,
-          outFields: ["*"]
+        where: "OBJECTID = " + objectId        
       }).then(function (results) {
         //console.log(results.features);
         if (results.features.length > 0) {
@@ -365,8 +419,8 @@ function App() {
           });         
 
           // highlight only the selected feature
-          layerView.highlight(feature);
-          
+          //layerView.highlight(feature);
+
           
           mapDiv.view.popup.dockEnabled = true;
           mapDiv.view.popup.open({
@@ -387,7 +441,7 @@ function App() {
       id: 'map'
     },
     {
-      title: 'List View',
+      title: 'Listing Search',
       id: 'list'
     }
   ]
@@ -396,37 +450,50 @@ function App() {
     
      {/* <button onClick={ e => setFilterValue(!filterValue) }>Filter</button>  */}
      
-      <div className="grid-container">        
-        <div className="d-flex w-100">          
-          { tabMenu.map((tab, index) => (<button className={tab.id === currTab ? 'bg-solid-primary color-white' : ''} onClick={ e => setCurrTab(tab.id)}>{ tab.title }</button>))}
+      <div className="grid-container w-100">        
+        <div className="d-flex justify-content-start">
+          { tabMenu.map((tab, index) => (<button className={`p-2 ${tab.id === currTab ? 'bg-solid-primary color-white' : ''}`} onClick={ e => setCurrTab(tab.id)}>{ tab.title }</button>))}
                   
         </div>          
         {/* <input type="text" onChange={ e => setSearchedName(e.target.value) } /> */}
         {/* <span>{ searchedName }</span>      
         <button onClick={findMe}>Find Me</button>   */}
       </div>    
-      <div className="grid-x grid-margin-x">
-  
-      <div className={"cell medium-auto " + (currTab !== 'map' ? 'd-none': '')} >
-        <div className="position-relative">
-          <div className="position-absolute z-1 mt-8 pt-8 d-flex flex-column gy-3">
-            <button className="icon--circle text-smaller" onClick={ e => setFilterValue(!filterValue) }>Filter</button>
-            <button className="icon--circle text-smaller" onClick={findMe}>Find Me</button>
-            <button disabled={!resetActive} className="icon--circle text-smaller" onClick={reset}>Reset</button>
-          </div>            
-          <div className="mapDiv"  ref={mapDiv}></div>
+      <div className={`${currTab !== 'map' ? ' w-100' : ''}`}>
+        <div className="grid-x">
+
+        <div className={"cell medium-auto " + (currTab !== 'map' ? 'd-none': '')} >
+          <div className="position-relative">
+            <div className="position-absolute z-1 mt-8 pt-8 d-flex flex-column gy-3">
+              <button className="icon--circle text-smaller" onClick={ e => setFilterValue(!filterValue) }>Filter</button>
+              <button className="icon--circle text-smaller" onClick={findMe}>Find Me</button>
+              <button disabled={!resetActive} className="icon--circle text-smaller" onClick={reset}>Reset</button>
+            </div>            
+            <div className="mapDiv"  ref={mapDiv}></div>
+          </div>
         </div>
-      </div>
-  
-      <div className={`cell ${currTab == 'map' ? 'medium-4' : ''}`}>
-        { items.map((item, index) => (<div key={index} className="mb-4">
-          
-            <h4>{ item.OBJECTID }</h4>
-            {/* <p>{ item.birthdate }</p>
-            <img src={item.headshot} alt={item.name} /> */}
-            <button className="button" onClick={e => selectObject(item.OBJECTID)}>View on Map</button>
-            <hr />
-          </div>)) }
+
+        <div className={`cell px-4 ${currTab === 'map' ? 'medium-4 d-none d-medium-block' : 'pt-4 medium-12'}`}>
+          <div className="mb-4">
+            { currTab === 'list' ?  
+              <div className="">
+                  <label htmlFor="keywords">Search by keyword</label>
+                  <input type="text" id="keywords" onChange={ e => setKeywords(e.target.value)} />
+              </div>
+            : <div>
+                <label htmlFor="plotholderName">Search by name</label>
+                  <input type="text" id="plotholderName" onChange={ e => setSearchedName(e.target.value)} />
+              </div>}
+          </div>
+          { items.map((item, index) => (<div key={index} className="mb-4">
+            
+              <h4>{ item.name }</h4>
+              {/* <p>{ item.birthdate }</p>
+              <img src={item.headshot} alt={item.name} /> */}
+              <button className="button" onClick={e => selectObject(item.OBJECTID)}>View on Map</button>
+              <hr />
+            </div>)) }
+        </div>
       </div>
     </div>
   </div>)
