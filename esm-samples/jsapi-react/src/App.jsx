@@ -25,7 +25,7 @@ import Fullscreen from '@arcgis/core/widgets/Fullscreen';
 // import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 // import Color from '@arcgis/core/Color';
 
-// import * as reactiveUtils from '@arcgis/core/core/ReactiveUtils';
+import * as reactiveUtils from '@arcgis/core/core/ReactiveUtils';
 
 import "./App.css";
 
@@ -134,7 +134,15 @@ function App() {
           featureLayer.renderer = renderer;
          
         
-          view.whenLayerView(graveLayer).then((layerView) => {            
+          view.whenLayerView(graveLayer).then(async (layerView) => {            
+            // after all features are loaaded
+            
+            await reactiveUtils.whenOnce(() => !layerView.updating);            
+            //alert('test');
+            createListView(layerView);
+            if (selectedObjectId){              
+              selectObject(selectedObjectId, layerView);
+            }
             setGravesView(layerView);            
 
           });
@@ -236,40 +244,30 @@ function App() {
 
 
   useEffect(() => {
-    let filterExpression = filterValue ? "status = 'occupied'" : null;    
-    if (gravesView){      
-      gravesView.filter = {
-        where: filterExpression
-      };
+    createListView();
+     
+  }, [filterValue]);
 
-      gravesView.queryFeatures({
-        where: filterExpression,
-      }).then((response) => {
-
-        //console.log('results', response.features.map(feature => feature.attributes));
-        setItems(response.features.map(feature => feature.attributes));
-        // output results to list view
-
-      });
-      //console.log('view', gravesView);
-    }    
-  }, [filterValue, gravesView]);
-
-  useEffect(() => {
-    ///console.log('selectedObjectId', selectedObjectId);
-    if (gravesView){
-      
-      if (selectedObjectId){
-        
-        selectObject(selectedObjectId);
-      }
-    }
-  }, [gravesView]);
 
   
 
-  const createListView = () => {
-    // create a list view of the features
+  const createListView = (layerView = gravesView) => {
+    let filterExpression = filterValue ? "status = 'occupied'" : null;    
+    if (layerView){      
+      layerView.filter = {
+        where: filterExpression
+      };
+      
+      layerView.queryFeatures({
+        where: filterExpression,
+      }).then((response) => {
+          
+        setItems(response.features.map(feature => feature.attributes));
+
+  
+      });
+    }   
+    
   }
 
   const findMe = () => {
@@ -343,29 +341,40 @@ function App() {
     });
   }
 
-  const selectObject = (objectId) => {
+  const selectObject = (objectId, layerView = gravesView) => {
       if (currTab !== 'map') setCurrTab('map');
-      gravesView.queryFeatures({  
-        where: "OBJECTID = " + objectId,
-          outFields: ["*"],
-          returnGeometry: true
-      }).then(function (results) {
+      //console.log(layerView);
+      // clone layer view
+      
 
+      layerView.queryFeatures({  
+        where: "OBJECTID = " + objectId,
+          outFields: ["*"]
+      }).then(function (results) {
+        //console.log(results.features);
         if (results.features.length > 0) {
           var feature = results.features[0];
           
 
-          // Trigger the popup
-          mapDiv.view.popup.open({
-              features: [feature]            
-          });
 
           // Optionally zoom to the feature
           
           mapDiv.view.goTo({              
               target: feature,
               zoom: 20
-          });              
+          });         
+
+          // highlight only the selected feature
+          layerView.highlight(feature);
+          
+          
+          mapDiv.view.popup.dockEnabled = true;
+          mapDiv.view.popup.open({
+            
+            features: [feature]  
+          });     
+          
+
         }
     })
   };
@@ -401,22 +410,23 @@ function App() {
       <div className={"cell medium-auto " + (currTab !== 'map' ? 'd-none': '')} >
         <div className="position-relative">
           <div className="position-absolute z-1 mt-8 pt-8 d-flex flex-column gy-3">
-            <button class="icon--circle text-smaller" onClick={ e => setFilterValue(!filterValue) }>Filter</button>
-            <button class="icon--circle text-smaller" onClick={findMe}>Find Me</button>
-            <button disabled={!resetActive} class="icon--circle text-smaller" onClick={reset}>Reset</button>
+            <button className="icon--circle text-smaller" onClick={ e => setFilterValue(!filterValue) }>Filter</button>
+            <button className="icon--circle text-smaller" onClick={findMe}>Find Me</button>
+            <button disabled={!resetActive} className="icon--circle text-smaller" onClick={reset}>Reset</button>
           </div>            
           <div className="mapDiv"  ref={mapDiv}></div>
         </div>
       </div>
   
-      <div className="cell medium-4">
-        { items.map((item, index) => (<div key={index} className="card">
-          <div className="card-section">            
+      <div className={`cell ${currTab == 'map' ? 'medium-4' : ''}`}>
+        { items.map((item, index) => (<div key={index} className="mb-4">
+          
             <h4>{ item.OBJECTID }</h4>
-            <p>{ item.birthdate }</p>
-            <img src={item.headshot} alt={item.name} />
+            {/* <p>{ item.birthdate }</p>
+            <img src={item.headshot} alt={item.name} /> */}
             <button className="button" onClick={e => selectObject(item.OBJECTID)}>View on Map</button>
-          </div></div>)) }
+            <hr />
+          </div>)) }
       </div>
     </div>
   </div>)
