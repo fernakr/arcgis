@@ -67,19 +67,20 @@ function App() {
 
   
 
-    
-
-
+    const isMobile = checkMobile();
+    // base rotation of mobile or desktop
+    const baseRotation = isMobile ? -90 : 180;
+    const baseZoom = isMobile ? 16 : 17;
     const view = new MapView({
       container: mapDiv.current,
       map: map,
       center: cemeteryLocation,
-      rotation: 68 + 180, // Rotate the view to 0 degrees
+      rotation: 68 + baseRotation, // Rotate the view to 0 degrees
       // constraints: {
       //   // minZoom: 16,
       //   // maxZoom: 22, // Set the max zoom level to 19
       // },
-      zoom: 17, // Set your desired zoom level
+      zoom: baseZoom, // Set your desired zoom level
     });
 
     const userPositionLayer = new GraphicsLayer();
@@ -144,7 +145,7 @@ function App() {
             // after all features are loaaded
             
             await reactiveUtils.whenOnce(() => !layerView.updating);            
-            console.log(layerView);
+            //console.log(layerView);
             createListView(layerView);
             if (selectedObjectId){              
               selectObject(selectedObjectId, layerView);
@@ -323,6 +324,23 @@ function App() {
       });
     }   
     
+  }
+  
+  // when window size is resized update the view
+  window.addEventListener('resize', () => {
+    if (mapDiv.view) {
+      // rotate map 
+      const isMobile = checkMobile();
+      const baseRotation = isMobile ? -90 : 180;
+      const baseZoom = isMobile ? 16 : 17;
+      mapDiv.view.rotation = 68 + baseRotation;
+      mapDiv.view.zoom = baseZoom;
+
+    }
+  });
+
+  const checkMobile = () => {
+    return window.innerWidth < 768;
   }
 
   const findMe = () => {
