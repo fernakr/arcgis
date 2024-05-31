@@ -43,7 +43,7 @@ function App() {
   const selectedObjectId = urlParams.get('objectId');
   const [resetActive, setResetActive] = React.useState(false);
   const [keywords, setKeywords] = React.useState('');
-  const fields = ['name', 'birthdate', 'headshot','status', 'OBJECTID'];
+  const fields = ['name', 'birthdate', 'headshot','status', 'OBJECTID','Eligibility'];
   const listExpressionAppend = 'status = \'occupied\'';
   
   let graveLayer;
@@ -280,7 +280,7 @@ function App() {
   const updateResults = (layerView = gravesView, filterPlots = true) => {
     
 
-    let filterExpression = null;
+    let filterExpression = '';
     if (keywords){          
         filterExpression = fields.map(field => `lower(${field}) LIKE '%${keywords.toLowerCase()}%'`).join(" OR ");
     }      
@@ -289,11 +289,20 @@ function App() {
       filterExpression = searchedName ? "lower(name) LIKE '%" + searchedName.toLowerCase() + "%'" : null;
     } 
 
+
+    if (filterEligibility.length > 0){
+      if (filterExpression) filterExpression += " AND ";
+      let eligibilityExpression = filterEligibility.map(eligibility => `Eligibility like '%|${eligibility}|%'`).join(" OR ");
+      filterExpression += eligibilityExpression;      
+      //console.log(filterExpression);
+    }
+
     if (filterPlots){      
       layerView.filter = {
         where: filterExpression,
       };
     }
+
 
     layerView.queryFeatures({
       where: (filterExpression ? filterExpression + " AND " : '') + listExpressionAppend,
@@ -452,13 +461,13 @@ function App() {
     // grab all checked checkboxes with this name
     const checkboxes = document.querySelectorAll('input[name="eligibility"]');
     const checkedValues = Array.from(checkboxes).filter(checkbox => checkbox.checked).map(checkbox => checkbox.value);
-    console.log(checkedValues);
+    //console.log(checkedValues);
     setFilterEligibility(checkedValues);
   }
     
 
     
-  const eligibility = [
+  const eligibilityOptions = [
     {
       id: 10,
       label: 'Governor'
@@ -486,6 +495,15 @@ function App() {
       id: 'list'
     }
   ]
+
+  const outputEligibility = (eligibilityString) => {
+    const eligibilityOption = eligibilityString.split('|').filter(eligibility => eligibility != '').map(eligibility => eligibilityOptions.find(option => option.id.toString() === eligibility ).label);    
+    return eligibilityOption.join(', ');
+  
+    
+    //return .label)
+  }
+
   return (<div className="wrapper">
     
     
@@ -530,8 +548,7 @@ function App() {
             { items.map((item, index) => (<div key={index} className="mb-4">
               
                 <h4>{ item.name }</h4>
-                {/* <p>{ item.birthdate }</p>
-                <img src={item.headshot} alt={item.name} /> */}
+                { item.Eligibility && <p>Eligibility: { outputEligibility(item.Eligibility) }</p> }
                 <button className="button" onClick={e => selectObject(item.OBJECTID)}>View on Map</button>
                 <hr />
               </div>)) }
@@ -539,7 +556,7 @@ function App() {
         </div>
       </div>
       <div>
-            { eligibility.map((item, index) => (<div key={index} className="mb-4">
+            { eligibilityOptions.map((item, index) => (<div key={index} >
               <label>
                 <input type="checkbox" value={ item.id } name="eligibility" onChange={ updateFilterEligibility } />
                 { item.label }
