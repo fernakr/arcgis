@@ -31,6 +31,7 @@ import "./App.css";
 
 function App() {
 
+  const [filterEligibility, setFilterEligibility] = React.useState([]);
   
   const [filterValue, setFilterValue] = React.useState(false);
   const [gravesView, setGravesView] = React.useState(null);
@@ -145,8 +146,8 @@ function App() {
             // after all features are loaaded
             
             await reactiveUtils.whenOnce(() => !layerView.updating);            
-            //console.log(layerView);
-            createListView(layerView);
+            
+            updateResults(layerView, false);
             if (selectedObjectId){              
               selectObject(selectedObjectId, layerView);
             }
@@ -205,6 +206,9 @@ function App() {
         label: 'Expand',
         view: view
       });
+
+      
+
       
 
       var legend = new Legend({
@@ -228,6 +232,8 @@ function App() {
 
    
     });
+
+      
     
     view.on('drag', (event) => {
       setResetActive(true);
@@ -251,78 +257,69 @@ function App() {
 
 
   useEffect(() => {
-    createListView();
+    if (gravesView){
+      updateResults();
+    }
      
-  }, [filterValue]);
+  }, [filterValue, searchedName, keywords, filterEligibility]);
 
-  useEffect(() => {
-    if (gravesView){
-      //console.log('name', searchedName);
-      // not case sensitive
-      let filterExpression = null;
-      if (searchedName){
-        filterExpression = searchedName ? "lower(name) LIKE '%" + searchedName.toLowerCase() + "%'" : null;
-      } 
-      
-      gravesView.filter = {
-        where: filterExpression,
-      };
-      gravesView.queryFeatures({
-        where: (searchedName ? (filterExpression + " AND ") : '') + listExpressionAppend,
-        outFields: fields,
-      }).then((response) => {
-        //console.log(response.features.map(feature => feature.attributes));
-        setItems(response.features.map(feature => feature.attributes));
-      });
-    }
-  }, [searchedName]);
+  // useEffect(() => {
+  //   if (gravesView){
+  //     updateResults();
+  //   }
+  // }, [searchedName]);
 
-  useEffect(() => {
-    if (gravesView){
-
-      let filterExpression = null;
-      if (keywords){          
-          filterExpression = fields.map(field => `lower(${field}) LIKE '%${keywords.toLowerCase()}%'`).join(" OR ");
-      }      
-      gravesView.filter = {
-        where: filterExpression,
-      };
-      gravesView.queryFeatures({
-        where: (keywords ? filterExpression + " AND " : '') + listExpressionAppend,
-        outFields: fields,
-      }).then((response) => {
-        //console.log(response.features.map(feature => feature.attributes));
-        setItems(response.features.map(feature => feature.attributes));
-      });
-    }
-  }, [keywords]);
-
-
-
-
-
-
+  // useEffect(() => {
+  //   if (gravesView){
+  //     updateResults();
+  //   }
+  // }, [keywords]);
 
   
 
-  const createListView = (layerView = gravesView) => {
-    let filterExpression = filterValue ? "status = 'occupied'" : null;    
-    if (layerView){      
+  const updateResults = (layerView = gravesView, filterPlots = true) => {
+    
+
+    let filterExpression = null;
+    if (keywords){          
+        filterExpression = fields.map(field => `lower(${field}) LIKE '%${keywords.toLowerCase()}%'`).join(" OR ");
+    }      
+    if (searchedName){
+      if (filterExpression) filterExpression += " AND ";
+      filterExpression = searchedName ? "lower(name) LIKE '%" + searchedName.toLowerCase() + "%'" : null;
+    } 
+
+    if (filterPlots){      
       layerView.filter = {
-        where: filterExpression,        
-        
+        where: filterExpression,
       };
+    }
+
+    layerView.queryFeatures({
+      where: (filterExpression ? filterExpression + " AND " : '') + listExpressionAppend,
+      outFields: fields,
+    }).then((response) => {
+      //console.log(response.features.map(feature => feature.attributes));
+      setItems(response.features.map(feature => feature.attributes));
+    });
+
+
+    // if (layerView){      
+    //   layerView.filter = {
+    //     where: filterExpression,        
+        
+    //   };
       
-      layerView.queryFeatures({
-        where: listExpressionAppend + (filterExpression ? " AND " + filterExpression : ''),
-        outFields: fields,
-      }).then((response) => {
-        //console.log(response.features.map(feature => feature.attributes));
-        setItems(response.features.map(feature => feature.attributes));
+    //   layerView.queryFeatures({
+    //     where: listExpressionAppend + (filterExpression ? " AND " + filterExpression : ''),
+    //     outFields: fields,
+    //   }).then((response) => {
+    //     //console.log(response.features.map(feature => feature.attributes));
+    //     setItems(response.features.map(feature => feature.attributes));
 
   
-      });
-    }   
+    //   });
+    // }   
     
   }
   
@@ -451,8 +448,34 @@ function App() {
     })
   };
 
+  const updateFilterEligibility = (e) => {
+    // grab all checked checkboxes with this name
+    const checkboxes = document.querySelectorAll('input[name="eligibility"]');
+    const checkedValues = Array.from(checkboxes).filter(checkbox => checkbox.checked).map(checkbox => checkbox.value);
+    console.log(checkedValues);
+    setFilterEligibility(checkedValues);
+  }
     
 
+    
+  const eligibility = [
+    {
+      id: 10,
+      label: 'Governor'
+    },
+    {
+      id: 14,
+      label: 'Senator'
+    },
+    {
+      id: 30,
+      label: 'Representative'
+    },
+    {
+      id: 40,
+      label: 'President'
+    }
+  ]
   const tabMenu = [
     {
       title: 'Map View',
@@ -472,49 +495,59 @@ function App() {
         <div className="d-flex justify-content-start">
           { tabMenu.map((tab, index) => (<button className={`p-2 ${tab.id === currTab ? 'bg-solid-primary color-white' : ''}`} onClick={ e => setCurrTab(tab.id)}>{ tab.title }</button>))}
                   
-        </div>          
-        {/* <input type="text" onChange={ e => setSearchedName(e.target.value) } /> */}
-        {/* <span>{ searchedName }</span>      
-        <button onClick={findMe}>Find Me</button>   */}
+        </div>    
+       
       </div>    
       <div className={`${currTab !== 'map' ? ' w-100' : ''}`}>
         <div className="grid-x">
 
-        <div className={"cell medium-auto " + (currTab !== 'map' ? 'd-none': '')} >
-          <div className="position-relative">
-            <div className="position-absolute z-1 mt-8 pt-8 d-flex flex-column gy-3">
-              <button className="icon--circle text-smaller" onClick={ e => setFilterValue(!filterValue) }>Filter</button>
-              <button className="icon--circle text-smaller" onClick={findMe}>Find Me</button>
-              <button disabled={!resetActive} className="icon--circle text-smaller" onClick={reset}>Reset</button>
-            </div>            
-            <div className="mapDiv"  ref={mapDiv}></div>
+          <div className={"cell medium-auto " + (currTab !== 'map' ? 'd-none': '')} >
+            <div className="position-relative">
+              <div className="position-absolute z-1 mt-8 pt-8 d-flex flex-column gy-3">
+                <button className="icon--circle text-smaller" onClick={ e => setFilterValue(!filterValue) }>Filter</button>
+                <button className="icon--circle text-smaller" onClick={findMe}>Find Me</button>
+                <button disabled={!resetActive} className="icon--circle text-smaller" onClick={reset}>Reset</button>
+              </div>            
+              <div className="mapDiv"  ref={mapDiv}></div>
+            </div>
           </div>
-        </div>
 
-        <div className={`cell px-4 ${currTab === 'map' ? 'medium-4 d-none d-medium-block' : 'pt-4 medium-12'}`}>
-          <div className="mb-4">
-            { currTab === 'list' ?  
-              <div className="">
-                  <label htmlFor="keywords">Search by keyword</label>
-                  <input type="text" id="keywords" onChange={ e => setKeywords(e.target.value)} />
-              </div>
-            : <div>
-                <label htmlFor="plotholderName">Search by name</label>
-                  <input type="text" id="plotholderName" onChange={ e => setSearchedName(e.target.value)} />
-              </div>}
+          <div className={`cell px-4 ${currTab === 'map' ? 'medium-4 d-none d-medium-block' : 'pt-4 medium-12'}`}>
+            <div className="mb-4">
+              { currTab === 'list' ?  
+                <div className="">
+                    <label htmlFor="keywords">Search by keyword</label>
+                    <input type="text" id="keywords" onChange={ e => { setKeywords(e.target.value); setSearchedName(null)} } />
+                </div>
+              : <div>
+                  <label htmlFor="plotholderName">Search by name</label>
+                    <input type="text" id="plotholderName" onChange={ e => { setSearchedName(e.target.value); setKeywords(null) }} />
+                </div>}
+            </div>
+            <div>
+
+            </div>
+            { items.map((item, index) => (<div key={index} className="mb-4">
+              
+                <h4>{ item.name }</h4>
+                {/* <p>{ item.birthdate }</p>
+                <img src={item.headshot} alt={item.name} /> */}
+                <button className="button" onClick={e => selectObject(item.OBJECTID)}>View on Map</button>
+                <hr />
+              </div>)) }
           </div>
-          { items.map((item, index) => (<div key={index} className="mb-4">
-            
-              <h4>{ item.name }</h4>
-              {/* <p>{ item.birthdate }</p>
-              <img src={item.headshot} alt={item.name} /> */}
-              <button className="button" onClick={e => selectObject(item.OBJECTID)}>View on Map</button>
-              <hr />
-            </div>)) }
         </div>
       </div>
-    </div>
-  </div>)
+      <div>
+            { eligibility.map((item, index) => (<div key={index} className="mb-4">
+              <label>
+                <input type="checkbox" value={ item.id } name="eligibility" onChange={ updateFilterEligibility } />
+                { item.label }
+              </label>
+            </div>)) }
+
+        </div>     
+    </div>)
 }
 
 
