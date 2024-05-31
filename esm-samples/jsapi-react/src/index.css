@@ -17059,3 +17059,7 @@ address {
 .z-1{
   z-index: 1;
 }
+
+.icon--circle[disabled]{
+  background-color: gray !important;
+}

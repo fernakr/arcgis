@@ -31,16 +31,21 @@ import "./App.css";
 
 function App() {
 
+  
   const [filterValue, setFilterValue] = React.useState(false);
   const [gravesView, setGravesView] = React.useState(null);
   const mapDiv = useRef(null);
   const [searchedName, setSearchedName] = React.useState('');
   const [currTab, setCurrTab] = React.useState('map');
+  const [items, setItems] = React.useState([]);
+  const urlParams = new URLSearchParams(window.location.search);
+  const selectedObjectId = urlParams.get('objectId');
+  const [resetActive, setResetActive] = React.useState(false);
   
   let graveLayer;
   const cemeteryLocation = [-97.726293, 30.266041];
   
-  
+
 
   useEffect(() => {
    // Create a map and view
@@ -54,9 +59,7 @@ function App() {
       
     });
 
-    // get the feature layer
-    // const featureLayer = map.layers.items[0];
-    
+
   
 
     
@@ -131,12 +134,9 @@ function App() {
           featureLayer.renderer = renderer;
          
         
-          view.whenLayerView(graveLayer).then((layerView) => {
-            // flash flood warnings layer loaded
-            // get a reference to the flood warnings layerview
-            //console.log('layerView', layerView);
-            setGravesView(layerView);
-            //gravesView = layerView;
+          view.whenLayerView(graveLayer).then((layerView) => {            
+            setGravesView(layerView);            
+
           });
       
           // add images to the feature layer
@@ -168,9 +168,14 @@ function App() {
                 }
               }]
             }]
-          }                    
+          }                
+          
+          
 
         }else{
+          // disable pop up from other layers
+          featureLayer.popupEnabled = false;
+
           legendValues.push(legendValues.concat([{
             layer: featureLayer,
             title: "Legend"
@@ -209,9 +214,12 @@ function App() {
    
     });
     
+    view.on('drag', (event) => {
+      setResetActive(true);
+    });
 
     view.watch('zoom', (event) => {
-      //addMapImage();
+      setResetActive(true);
     });
 
     view.on('pointer-leave', (event) => {
@@ -221,46 +229,51 @@ function App() {
 
 
 
-    // Use the browser's Geolocation API to continuously watch for changes in position
-    // const watchId = navigator.geolocation.watchPosition(
-    //   (position) => {
-    //     // Add a marker for the browser's GPS location
-    //     addGPSMarker(position);
-        
-  
-    //     // Center the view on the updated GPS location
-    //     //view.center = [position.coords.longitude, position.coords.latitude];
-    //   },
-    //   (error) => {
-    //     console.error('Error getting GPS location:', error.message);
-    //   }
-    // );
-  
-    // Clean up the watchPosition when the component is unmounted
-    return () => {
-      // navigator.geolocation.clearWatch(watchId);
-    };
+    
 
     
   }, [mapDiv]);
 
 
   useEffect(() => {
-    let filterExpression = filterValue ? "status = 'occupied'" : null;
-    //console.log(gravesView);
+    let filterExpression = filterValue ? "status = 'occupied'" : null;    
     if (gravesView){      
       gravesView.filter = {
         where: filterExpression
       };
+
+      gravesView.queryFeatures({
+        where: filterExpression,
+      }).then((response) => {
+
+        //console.log('results', response.features.map(feature => feature.attributes));
+        setItems(response.features.map(feature => feature.attributes));
+        // output results to list view
+
+      });
       //console.log('view', gravesView);
     }    
   }, [filterValue, gravesView]);
 
+  useEffect(() => {
+    ///console.log('selectedObjectId', selectedObjectId);
+    if (gravesView){
+      
+      if (selectedObjectId){
+        
+        selectObject(selectedObjectId);
+      }
+    }
+  }, [gravesView]);
 
+  
 
+  const createListView = () => {
+    // create a list view of the features
+  }
 
   const findMe = () => {
-    mapDiv.view.when(() => {
+    
 
       navigator.geolocation.getCurrentPosition((position) => {
         // Add a marker for the browser's GPS location
@@ -319,7 +332,7 @@ function App() {
 
   
       });
-    });
+    
 
   }
 
@@ -329,6 +342,34 @@ function App() {
       zoom: 17
     });
   }
+
+  const selectObject = (objectId) => {
+      if (currTab !== 'map') setCurrTab('map');
+      gravesView.queryFeatures({  
+        where: "OBJECTID = " + objectId,
+          outFields: ["*"],
+          returnGeometry: true
+      }).then(function (results) {
+
+        if (results.features.length > 0) {
+          var feature = results.features[0];
+          
+
+          // Trigger the popup
+          mapDiv.view.popup.open({
+              features: [feature]            
+          });
+
+          // Optionally zoom to the feature
+          
+          mapDiv.view.goTo({              
+              target: feature,
+              zoom: 20
+          });              
+        }
+    })
+  };
+
     
 
   const tabMenu = [
@@ -359,17 +400,23 @@ function App() {
   
       <div className={"cell medium-auto " + (currTab !== 'map' ? 'd-none': '')} >
         <div className="position-relative">
-          <div className="position-absolute z-1 mt-8 d-flex flex-column gy-3">
-            <button onClick={ e => setFilterValue(!filterValue) }>Filter</button>
-            <button onClick={findMe}>Find Me</button>
-            <button onClick={reset}>Reset</button>
+          <div className="position-absolute z-1 mt-8 pt-8 d-flex flex-column gy-3">
+            <button class="icon--circle text-smaller" onClick={ e => setFilterValue(!filterValue) }>Filter</button>
+            <button class="icon--circle text-smaller" onClick={findMe}>Find Me</button>
+            <button disabled={!resetActive} class="icon--circle text-smaller" onClick={reset}>Reset</button>
           </div>            
           <div className="mapDiv"  ref={mapDiv}></div>
         </div>
       </div>
   
       <div className="cell medium-4">
-        List View
+        { items.map((item, index) => (<div key={index} className="card">
+          <div className="card-section">            
+            <h4>{ item.OBJECTID }</h4>
+            <p>{ item.birthdate }</p>
+            <img src={item.headshot} alt={item.name} />
+            <button className="button" onClick={e => selectObject(item.OBJECTID)}>View on Map</button>
+          </div></div>)) }
       </div>
     </div>
   </div>)
