@@ -219,6 +219,8 @@ function App() {
           // Set the renderer to the feature layer
           featureLayer.renderer = renderer;
 
+          // Create a new layer view for the feature layer
+        
 
           view.whenLayerView(featureLayer).then(async (layerView) => {
 
@@ -290,7 +292,6 @@ function App() {
       });
 
       view.ui.add(fullscreen, "top-right");
-
       view.ui.add(legend, "bottom-left");
 
     });
@@ -373,7 +374,7 @@ function App() {
     gravesLayer.visible = true; // zoom > 17;
   }
 
-  const updateResults = (layerView = gravesView, filterPlots = true) => {
+  const updateResults = (layerView = gravesView) => {
 
 
     let filterExpression = '';
@@ -382,7 +383,7 @@ function App() {
     }
     if (searchName) {
       if (filterExpression) filterExpression += " AND ";
-      filterExpression = searchName ? "(lower(name) LIKE '%" + searchName.toLowerCase() + "%'" : null;
+      filterExpression = searchName ? "(lower(name) LIKE '%" + searchName.toLowerCase() + "%')" : null;
     }
 
 
@@ -395,17 +396,21 @@ function App() {
     if (filterSections.length > 0) {
       if (filterExpression) filterExpression += " AND ";
       let sectionExpression = "(" + filterSections.map(section => `cemeterySection = ${section}`).join(" OR ") + ")";
-      filterExpression += sectionExpression;
-      //console.log(filterExpression);
+      filterExpression += sectionExpression;      
     }
 
-    //console.log(filterExpression);
-
-    if (filterPlots && filterExpression) {
-      layerView.filter = {
-        where: filterExpression,
+    
+      
+    //console.log(filterExpression ? (filterExpression + " AND ") : '');
+      // change the renderer of features that are not in the filter
+      layerView.featureEffect = {
+        filter: {
+          where: filterExpression ? filterExpression  : ''
+        },
+        includedEffect: "",
+        excludedEffect: "grayscale(100%) opacity(10%)"
       };
-    }
+    
 
 
     // paginate the results. 1000 is the max number of features that can be returned
@@ -420,7 +425,7 @@ function App() {
     }).then(async (response) => {
 
 
-      console.log(response.features.map(feature => feature.attributes));
+      //console.log(response.features.map(feature => feature.attributes));
       setItems(response.features.map(feature => feature.attributes));
       // need to filter by status
       const featureCount = await layerView.queryFeatureCount();
@@ -626,7 +631,7 @@ function App() {
             {currPage < pagination.totalPages && <button onClick={e => { setCurrPage(currPage + 1); }}>Next</button>}
           </div>
         </div>
-        <div className={`${currTab === 'map' ? 'd-none' : 'cell px-4 medium-4'}`}>
+        <div className={`${currTab === 'map' ? 'd-block' : 'cell px-4 medium-4'}`}>
           <h2>Filters</h2>          
           { filtersActive.length > 0 && <div>
             <h3>Filters</h3>
