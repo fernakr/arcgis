@@ -87,6 +87,22 @@ function App() {
     }
   ]
 
+  const helpStates =  [
+    {
+      highlightElemSelector: '.esri-legend',
+      description: 'This is the legend'
+    },
+    {
+      highlightElemSelector: '#find-me',
+      description: 'Click this button to find your location'
+    },
+    {
+      highlightElemSelector: '#reset',
+      description: 'Click this button to reset the map'
+    }
+  ]
+    
+
   useEffect(() => {
    // Create a map and view
    esriConfig.apiKey = "AAPK1603870d3538472fb7f6c4d1accdec01rx8QfJvj3jb-IW_qiJR_dYdKvNMFUSvt1HQOWd7OjMFMiuUtCVBmUwyLHuDAxRkx";
@@ -269,30 +285,23 @@ function App() {
   }, [mapDiv]);
 
   useEffect(() => {
-    let highlightElemSelector, description;
-    switch (helpActive){
-      case 1:
-        highlightElemSelector = '.esri-legend';        
-        description = 'This is the legend';
-        break;
-      case 2:
-        highlightElemSelector = '#find-me';
-        description = 'Click this button to find your location';
+    let highlightElemSelector, description;    
+    if (helpActive > 0){      
+      const helpState = helpStates[helpActive - 1];      
 
-      default:
-        break;
-    }
+      if (helpState){
+        highlightElemSelector = helpState.highlightElemSelector;
+        description = helpState.description;
+        // get position of help from esri-legend class
+        const highlightElem = document.querySelector(highlightElemSelector);
+        const highlightElemPosition = highlightElem.getBoundingClientRect();;
 
-    if (highlightElemSelector){
-      // get position of help from esri-legend class
-      const highlightElem = document.querySelector(highlightElemSelector);
-      const highlightElemPosition = highlightElem.getBoundingClientRect();;
-
-      setHelpInfo({
-        top: highlightElemPosition.top,
-        left: highlightElemPosition.left,
-        description
-      })
+        setHelpInfo({
+          top: highlightElemPosition.top,
+          left: highlightElemPosition.left,
+          description
+        })
+      }
     }
   }, [helpActive]);
 
@@ -496,14 +505,19 @@ function App() {
               <div className="position-absolute z-1 mt-8 pt-8 d-flex flex-column gy-3">
                 <button className="icon--circle text-smaller" onClick={ e => setHelpActive(1) }>Help</button>
                 <button className="icon--circle text-smaller" id="find-me"  onClick={findMe}>Find Me</button>
-                <button disabled={!resetActive} className="icon--circle text-smaller" onClick={reset}>Reset</button>
+                <button disabled={!resetActive} id="reset" className="icon--circle text-smaller" onClick={reset}>Reset</button>
               </div>            
               <div className="mapDiv"  ref={mapDiv}></div>
               { helpActive && 
-                <div className="help-info" style={{ top: helpInfo.top, left: helpInfo.left }}>
+                <div className="help-info bg-solid-primary color-white p-3 position-relative" style={{ top: helpInfo.top, left: helpInfo.left, width: 300 }}>
                   { helpInfo.description }
-                  { helpActive > 1 && <button onClick={ e => setHelpActive(helpActive - 1)}>Previous</button> }
-                  <button onClick={ e => setHelpActive(helpActive + 1)}>Next</button>
+                  
+                  <div className="d-block">
+                    { helpActive > 1 && <button class="color-inherit" onClick={ e => setHelpActive(helpActive - 1)}>Previous</button> }
+                    { helpActive === helpStates.length && <button class="color-inherit" onClick={ e => setHelpActive(false)}>Get Started</button>}
+                    { helpActive < helpStates.length && <button class="color-inherit" onClick={ e => setHelpActive(helpActive + 1)}>Next</button>}                  
+                  </div>
+                  <div class="bg-solid-primary-darker d-inline-block p-1 position-absolute right-0 bottom-0" >{ helpActive } of { helpStates.length }</div>
                 </div>
                }
             </div>
