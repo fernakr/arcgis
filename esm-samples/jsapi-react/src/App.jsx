@@ -632,6 +632,7 @@ function App() {
           </div>
         </div>
         <div className={`${currTab === 'map' ? 'd-block' : 'cell px-4 medium-4'}`}>
+          
           <h2>Filters</h2>          
           { filtersActive.length > 0 && <div>
             <h3>Filters</h3>
