@@ -31,27 +31,61 @@ import "./App.css";
 
 function App() {
 
-  const [filterEligibility, setFilterEligibility] = React.useState([]);
-  
-  const [filterValue, setFilterValue] = React.useState(false);
-  const [gravesView, setGravesView] = React.useState(null);
   const mapDiv = useRef(null);
-  const [searchedName, setSearchedName] = React.useState('');
-  const [currTab, setCurrTab] = React.useState('map');
-  const [items, setItems] = React.useState([]);
   const urlParams = new URLSearchParams(window.location.search);
   const selectedObjectId = urlParams.get('objectId');
-  const [resetActive, setResetActive] = React.useState(false);
-  const [keywords, setKeywords] = React.useState('');
+
   const fields = ['name', 'birthdate', 'headshot','status', 'OBJECTID','Eligibility'];
   const listExpressionAppend = 'status = \'occupied\'';
   
-  let graveLayer;
+  
   const cemeteryLocation = [-97.726293, 30.266041];
 
-
+  const [helpActive, setHelpActive] = React.useState(false);
+  const [helpInfo, setHelpInfo] = React.useState(0);
+  const [currPage, setCurrPage] = React.useState(0);
+  const [filtered, setFiltered] = React.useState(false);
+  const [filterEligibility, setFilterEligibility] = React.useState([]);  
+  const [filterValue, setFilterValue] = React.useState(false);
+  const [gravesLayer, setGravesLayer] = React.useState(null);
+  const [gravesView, setGravesView] = React.useState(null);  
+  const [searchedName, setSearchedName] = React.useState('');
+  const [currTab, setCurrTab] = React.useState('map');
+  const [items, setItems] = React.useState([]);
+  const [pagination, setPagination] = React.useState({});
   
+  const [resetActive, setResetActive] = React.useState(false);
+  const [keywords, setKeywords] = React.useState('');
 
+  // these will be pulled from Craft     
+  const eligibilityOptions = [
+    {
+      id: 10,
+      label: 'Governor'
+    },
+    {
+      id: 14,
+      label: 'Senator'
+    },
+    {
+      id: 30,
+      label: 'Representative'
+    },
+    {
+      id: 40,
+      label: 'President'
+    }
+  ]
+  const tabMenu = [
+    {
+      title: 'Map View',
+      id: 'map'
+    },
+    {
+      title: 'Listing Search',
+      id: 'list'
+    }
+  ]
 
   useEffect(() => {
    // Create a map and view
@@ -104,11 +138,11 @@ function App() {
 
       let legendValues = [];
       featureLayers.forEach(function(featureLayer) {
-        //console.log('featureLayer', featureLayer.title);
+
         if (featureLayer.title.includes('Graves')) {
-          graveLayer = featureLayer;
-          graveLayer.outFields = ['*'];
-          // update rendererer - set opacity based off value
+          setGravesLayer(featureLayer);
+          featureLayer.outFields = ['*'];
+          //graveLayer.visible = false;
 
           // set the renderer update fill color based off status
           // Create a unique value renderer
@@ -142,21 +176,21 @@ function App() {
           featureLayer.renderer = renderer;
           
         
-          view.whenLayerView(graveLayer).then(async (layerView) => {            
-            // after all features are loaaded
-            
+          view.whenLayerView(featureLayer).then(async (layerView) => {            
+
+            // after all features are loaaded           
             await reactiveUtils.whenOnce(() => !layerView.updating);            
             
             updateResults(layerView, false);
             if (selectedObjectId){              
               selectObject(selectedObjectId, layerView);
-            }
-            setGravesView(layerView);            
-
+            }            
+            setGravesView(layerView);                        
+            //updateGraveLayerVisibility(layerView);
           });
       
           // add images to the feature layer
-          graveLayer.popupTemplate = {
+          featureLayer.popupTemplate = {
             title: '{name}',
             content: [{
               type: "fields", // Autocast as new FieldsContent()
@@ -196,8 +230,7 @@ function App() {
             layer: featureLayer,
             title: "Legend"
           }]));
-        }
-        
+        }        
 
         
       });
@@ -207,32 +240,16 @@ function App() {
         view: view
       });
 
-      
-
-      
-
       var legend = new Legend({
         view: view,
         layerInfos: legendValues
       });
-
-      // min/max zoom
-      // view.constraints.minZoom = 16;
-      // view.constraints.maxZoom = 20;
-
-      //view.ui.add(compass, "top-left");
+            
       view.ui.add(fullscreen, "top-right");
-      // Add the legend to the view
-
-      view.ui.add(legend, "bottom-left");
-    
-
       
-
-
-   
+      view.ui.add(legend, "bottom-left");
+  
     });
-
       
     
     view.on('drag', (event) => {
@@ -240,42 +257,63 @@ function App() {
     });
 
     view.watch('zoom', (event) => {
-      setResetActive(true);
+      
+      updateGraveLayerVisibility(event);
     });
 
     view.on('pointer-leave', (event) => {
       document.body.style.cursor = "auto";
     });
-
-
-
-
     
-
     
   }, [mapDiv]);
+
+  useEffect(() => {
+    let highlightElemSelector, description;
+    switch (helpActive){
+      case 1:
+        highlightElemSelector = '.esri-legend';        
+        description = 'This is the legend';
+        break;
+      case 2:
+        highlightElemSelector = '#find-me';
+        description = 'Click this button to find your location';
+
+      default:
+        break;
+    }
+
+    if (highlightElemSelector){
+      // get position of help from esri-legend class
+      const highlightElem = document.querySelector(highlightElemSelector);
+      const highlightElemPosition = highlightElem.getBoundingClientRect();;
+
+      setHelpInfo({
+        top: highlightElemPosition.top,
+        left: highlightElemPosition.left,
+        description
+      })
+    }
+  }, [helpActive]);
+
+
+  useEffect(() => {    
+    setFiltered(filterEligibility.length > 0 || searchedName || keywords || filterValue);
+  }, [filterEligibility, filterValue, gravesView, searchedName, keywords]);
 
 
   useEffect(() => {
     if (gravesView){
       updateResults();
+      updateGraveLayerVisibility();
     }
      
-  }, [filterValue, searchedName, keywords, filterEligibility]);
+  }, [filtered, gravesView, currPage]);
 
-  // useEffect(() => {
-  //   if (gravesView){
-  //     updateResults();
-  //   }
-  // }, [searchedName]);
-
-  // useEffect(() => {
-  //   if (gravesView){
-  //     updateResults();
-  //   }
-  // }, [keywords]);
-
-  
+  const updateGraveLayerVisibility = (zoom = mapDiv.view.zoom) => {           
+    if (!gravesLayer) return;         
+    gravesLayer.visible = true; // zoom > 17;
+  }
 
   const updateResults = (layerView = gravesView, filterPlots = true) => {
     
@@ -293,8 +331,7 @@ function App() {
     if (filterEligibility.length > 0){
       if (filterExpression) filterExpression += " AND ";
       let eligibilityExpression = filterEligibility.map(eligibility => `Eligibility like '%|${eligibility}|%'`).join(" OR ");
-      filterExpression += eligibilityExpression;      
-      //console.log(filterExpression);
+      filterExpression += eligibilityExpression;            
     }
 
     if (filterPlots){      
@@ -304,31 +341,27 @@ function App() {
     }
 
 
+    // paginate the results. 1000 is the max number of features that can be returned
+
+    const numPerPage = 2;
+
     layerView.queryFeatures({
-      where: (filterExpression ? filterExpression + " AND " : '') + listExpressionAppend,
+      where: (filterExpression ? filterExpression + " AND " : '') + listExpressionAppend ,
+      start: currPage * numPerPage,
+      num: numPerPage,      
       outFields: fields,
-    }).then((response) => {
-      //console.log(response.features.map(feature => feature.attributes));
-      setItems(response.features.map(feature => feature.attributes));
-    });
-
-
-    // if (layerView){      
-    //   layerView.filter = {
-    //     where: filterExpression,        
-        
-    //   };
+    }).then(async (response) => { 
       
-    //   layerView.queryFeatures({
-    //     where: listExpressionAppend + (filterExpression ? " AND " + filterExpression : ''),
-    //     outFields: fields,
-    //   }).then((response) => {
-    //     //console.log(response.features.map(feature => feature.attributes));
-    //     setItems(response.features.map(feature => feature.attributes));
+      
+      setItems(response.features.map(feature => feature.attributes));
+      // need to filter by status
+      const featureCount = await layerView.queryFeatureCount();
+      setPagination({
+        total: featureCount,        
+        totalPages: Math.ceil(featureCount / numPerPage)
+      });
 
-  
-    //   });
-    // }   
+    });
     
   }
   
@@ -356,34 +389,9 @@ function App() {
         // Add a marker for the browser's GPS location
          mapDiv.userPositionLayer.removeAll();
 
-        // create a marker with a person icon
-
-
-
-
-        // const marker = new Graphic({
-        //   geometry: {
-        //     type: 'point',
-        //     x: position.coords.longitude,
-        //     y: position.coords.latitude,
-        //   },
-        //   symbol: {
-        //   type: "text", // autocasts as new TextSymbol()
-        //   color: "#ebab34",
-        //   text: "\ue675", // esri-icon-user
-        //   font: {
-        //     // autocasts as new Font()
-        //     size: 36,
-        //     family: "CalciteWebCoreIcons" // Esri Icon Font
-        //   }
-        // },
-        // });
 
         const userPosition = [position.coords.longitude, position.coords.latitude];
         const points = [userPosition, cemeteryLocation]; // latter to subbed in with currently selected feature if applicable
-
-        //console.log('points', points);
-        //mapDiv.userPositionLayer.add(marker);
 
         const graphics = points.map((point) => {
           return new Graphic({
@@ -422,35 +430,31 @@ function App() {
 
   const selectObject = (objectId, layerView = gravesView) => {
       if (currTab !== 'map') setCurrTab('map');
-      //console.log(layerView);
-      // clone layer view
       
 
       layerView.queryFeatures({  
         where: "OBJECTID = " + objectId        
       }).then(function (results) {
-        //console.log(results.features);
+
         if (results.features.length > 0) {
           var feature = results.features[0];
           
-
-
-          // Optionally zoom to the feature
+          // Zoom to the feature
           
           mapDiv.view.goTo({              
               target: feature,
               zoom: 20
-          });         
-
-          // highlight only the selected feature
-          //layerView.highlight(feature);
-
+          });  
           
+          // after zooming to the feature, open the popup
+
+
+
           mapDiv.view.popup.dockEnabled = true;
-          mapDiv.view.popup.open({
-            
+          mapDiv.view.popup.open({            
             features: [feature]  
-          });     
+          });  
+            
           
 
         }
@@ -460,42 +464,10 @@ function App() {
   const updateFilterEligibility = (e) => {
     // grab all checked checkboxes with this name
     const checkboxes = document.querySelectorAll('input[name="eligibility"]');
-    const checkedValues = Array.from(checkboxes).filter(checkbox => checkbox.checked).map(checkbox => checkbox.value);
-    //console.log(checkedValues);
+    const checkedValues = Array.from(checkboxes).filter(checkbox => checkbox.checked).map(checkbox => checkbox.value);    
     setFilterEligibility(checkedValues);
   }
     
-
-    
-  const eligibilityOptions = [
-    {
-      id: 10,
-      label: 'Governor'
-    },
-    {
-      id: 14,
-      label: 'Senator'
-    },
-    {
-      id: 30,
-      label: 'Representative'
-    },
-    {
-      id: 40,
-      label: 'President'
-    }
-  ]
-  const tabMenu = [
-    {
-      title: 'Map View',
-      id: 'map'
-    },
-    {
-      title: 'Listing Search',
-      id: 'list'
-    }
-  ]
-
   const outputEligibility = (eligibilityString) => {
     const eligibilityOption = eligibilityString.split('|').filter(eligibility => eligibility != '').map(eligibility => eligibilityOptions.find(option => option.id.toString() === eligibility ).label);    
     return eligibilityOption.join(', ');
@@ -522,11 +494,18 @@ function App() {
           <div className={"cell medium-auto " + (currTab !== 'map' ? 'd-none': '')} >
             <div className="position-relative">
               <div className="position-absolute z-1 mt-8 pt-8 d-flex flex-column gy-3">
-                <button className="icon--circle text-smaller" onClick={ e => setFilterValue(!filterValue) }>Filter</button>
-                <button className="icon--circle text-smaller" onClick={findMe}>Find Me</button>
+                <button className="icon--circle text-smaller" onClick={ e => setHelpActive(1) }>Help</button>
+                <button className="icon--circle text-smaller" id="find-me"  onClick={findMe}>Find Me</button>
                 <button disabled={!resetActive} className="icon--circle text-smaller" onClick={reset}>Reset</button>
               </div>            
               <div className="mapDiv"  ref={mapDiv}></div>
+              { helpActive && 
+                <div className="help-info" style={{ top: helpInfo.top, left: helpInfo.left }}>
+                  { helpInfo.description }
+                  { helpActive > 1 && <button onClick={ e => setHelpActive(helpActive - 1)}>Previous</button> }
+                  <button onClick={ e => setHelpActive(helpActive + 1)}>Next</button>
+                </div>
+               }
             </div>
           </div>
 
@@ -552,6 +531,10 @@ function App() {
                 <button className="button" onClick={e => selectObject(item.OBJECTID)}>View on Map</button>
                 <hr />
               </div>)) }
+            <div className="pagination">
+              { currPage > 0 && <button onClick={ e => { setCurrPage(currPage - 1);} }>Previous</button> }
+              { currPage < pagination.totalPages && <button onClick={ e => { setCurrPage(currPage + 1);} }>Next</button> }
+            </div>
           </div>
         </div>
       </div>
