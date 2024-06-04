@@ -4,6 +4,8 @@ import MapView from "@arcgis/core/views/MapView";
 import WebMap from "@arcgis/core/WebMap";
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import Graphic from '@arcgis/core/Graphic';
+import Basemap from '@arcgis/core/Basemap';
+//import BasemapStyle from '@arcgis/core/BasemapStyle';
 
 import esriConfig from '@arcgis/core/config.js';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
@@ -214,8 +216,9 @@ function App() {
       portalItem: {
         id: 'b8fbdd2f710e4414844565206609892e'
       },
-      basemap: 'arcgis-navigation',
-
+      basemap: 'osm/navigation',
+      showAttribution: false,
+      places: false
     });
 
 
@@ -772,6 +775,12 @@ function App() {
 
           <div className={`${currTab === 'map' ? 'd-none d-medium-block' : ''}`}>
             { currTab !== 'map' && <div className="mb-3">{ renderFiltersButton() }</div> }
+            { filtersActive.length > 0 && <div>
+            <h3>Active Filters</h3>
+            <div className="d-flex flex-wrap gx-1 gy-1 mb-4 w-100">
+              { filtersActive.map((filter, index) => (<button className="cursor-pointer bg-solid-gray color-white p-1 text-small fw-bold" key={ index } onClick={ e => removeFilter(filter) } >X { filter.title }</button>)) }
+            </div>
+          </div> }
             {items.map((item, index) => (<div key={index} className="mb-4">
 
               <h4>{item.name}</h4>
@@ -814,12 +823,7 @@ function App() {
         <div className={ filtersColumnClass }>
           
           <h2>Filters</h2>          
-          { filtersActive.length > 0 && <div>
-            <h3>Active Filters</h3>
-            <div className="d-flex flex-wrap gx-1 gy-1 mb-4 w-100">
-              { filtersActive.map((filter, index) => (<button className="cursor-pointer bg-solid-gray color-white p-1 text-small fw-bold" key={ index } onClick={ e => removeFilter(filter) } >X { filter.title }</button>)) }
-            </div>
-          </div> }
+
           <fieldset>
             <legend>Eligibility Reason</legend>
             { eligibilityOptions.map((item, index) => (<div key={index} >
