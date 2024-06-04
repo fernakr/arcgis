@@ -111,6 +111,84 @@ function App() {
     }
   ];
 
+  const findMe = () => {
+  
+
+    setLocating(true);
+    updateResetActive();
+    navigator.geolocation.getCurrentPosition((position) => {
+      // Add a marker for the browser's GPS location
+      mapDiv.userPositionLayer.removeAll();
+      const userPosition = [position.coords.longitude, position.coords.latitude];
+
+      
+      const target = selectedFeature ? [selectedFeature.geometry.centroid.longitude, selectedFeature.geometry.centroid.latitude]: cemeteryLocation;
+
+      const points = [userPosition, target]; // latter to subbed in with currently selected feature if applicable
+
+      const graphics = points.map((point, index) => {
+        return new Graphic({
+          geometry: { type: "point", x: point[0], y: point[1] },
+          symbol:  index === 0 ? {
+            type: 'text',  // autocasts as new TextSymbol()
+            color: 'green',
+            text: '\ue61d',  // esri-icon-map-pin
+            font: {  // autocast as new Font()
+              family: 'CalciteWebCoreIcons',
+              size: 12
+            }         
+          } : {
+            type: 'simple-marker',  // autocasts as new TextSymbol()
+            color: 'transparent',
+            outline: {              
+              width: 0
+            },
+            size: '1px'
+          }
+        });
+      });
+
+      mapDiv.view.graphics.addMany(graphics);
+      mapDiv.view.when(() => {
+        setLocating(false);
+        mapDiv.view.goTo({
+          target: graphics
+        });
+      });
+
+
+
+    });
+
+
+  }
+
+  const reset = () => {    
+    mapDiv.view.goTo({
+      target: cemeteryLocation,
+      zoom: getBaseZoom()
+    }).then(() => {
+      updateResetActive();
+    });
+  }
+  
+  let helpButtons = [
+    {
+      text: 'Help',
+      id: 'help',
+      action: e => setHelpActive(1)          
+    },
+    {
+      text: 'Find Me',
+      id: 'find-me',
+      action: findMe          
+    },
+    {
+      text: 'Reset',
+      id: 'reset',
+      action: reset          
+    }
+  ]
 
   const tabMenu = [
     {
@@ -305,23 +383,7 @@ function App() {
       });
 
       
-      const helpButtons = [
-        {
-          text: 'Help',
-          id: 'help',
-          action: e => setHelpActive(1)          
-        },
-        {
-          text: 'Find Me',
-          id: 'find-me',
-          action: findMe          
-        },
-        {
-          text: 'Reset',
-          id: 'reset',
-          action: reset          
-        }
-      ]
+
 
       for (let i = 0; i < helpButtons.length; i++) {
         const helpButton = document.createElement("button");
@@ -330,6 +392,7 @@ function App() {
         helpButton.classList.add("esri-widget", "esri-widget--button", "esri-interactive", "esri-reset-button");
         helpButton.addEventListener("click", helpButtons[i].action);
         view.ui.add(helpButton, "top-left");
+        helpButtons[i].element = helpButton;            
       }
       
 
@@ -388,6 +451,10 @@ function App() {
     }
   }, [helpActive]);
 
+  useEffect(() => {
+    const resetButton = helpButtons.find(button => button.id === 'reset');
+    console.log(resetButton);
+  }, [resetActive]);
   useEffect(() => {
     const sectionPrefix = '#section-';
     if (hash.includes(sectionPrefix)){
@@ -531,66 +598,7 @@ function App() {
     return window.innerWidth < 768;
   }
 
-  const findMe = () => {
-  
 
-    setLocating(true);
-    updateResetActive();
-    navigator.geolocation.getCurrentPosition((position) => {
-      // Add a marker for the browser's GPS location
-      mapDiv.userPositionLayer.removeAll();
-      const userPosition = [position.coords.longitude, position.coords.latitude];
-
-      
-      const target = selectedFeature ? [selectedFeature.geometry.centroid.longitude, selectedFeature.geometry.centroid.latitude]: cemeteryLocation;
-
-      const points = [userPosition, target]; // latter to subbed in with currently selected feature if applicable
-
-      const graphics = points.map((point, index) => {
-        return new Graphic({
-          geometry: { type: "point", x: point[0], y: point[1] },
-          symbol:  index === 0 ? {
-            type: 'text',  // autocasts as new TextSymbol()
-            color: 'green',
-            text: '\ue61d',  // esri-icon-map-pin
-            font: {  // autocast as new Font()
-              family: 'CalciteWebCoreIcons',
-              size: 12
-            }         
-          } : {
-            type: 'simple-marker',  // autocasts as new TextSymbol()
-            color: 'transparent',
-            outline: {              
-              width: 0
-            },
-            size: '1px'
-          }
-        });
-      });
-
-      mapDiv.view.graphics.addMany(graphics);
-      mapDiv.view.when(() => {
-        setLocating(false);
-        mapDiv.view.goTo({
-          target: graphics
-        });
-      });
-
-
-
-    });
-
-
-  }
-
-  const reset = () => {    
-    mapDiv.view.goTo({
-      target: cemeteryLocation,
-      zoom: getBaseZoom()
-    }).then(() => {
-      updateResetActive();
-    });
-  }
 
   const selectObject = (objectId, layerView = gravesView) => {
     if (currTab !== 'map') setCurrTab('map');
