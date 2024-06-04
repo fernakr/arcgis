@@ -274,10 +274,10 @@ function App() {
           // disable pop up from other layers
           featureLayer.popupEnabled = false;
 
-          legendValues.push(legendValues.concat([{
-            layer: featureLayer,
-            title: "Legend"
-          }]));
+          // legendValues.push(legendValues.concat([{
+          //   layer: featureLayer,
+          //   title: "Legend"
+          // }]));
         }
 
 
@@ -288,9 +288,11 @@ function App() {
         view: view
       });
 
+      console.log(legendValues);
+
       var legend = new Legend({
         view: view,
-        layerInfos: legendValues
+        layerInfos: legendValues[0]
       });
 
       view.ui.add(fullscreen, "top-right");
