@@ -698,7 +698,7 @@ function App() {
 
   let filtersColumnClass = 'pr-5 position-absolute p-4 right-0 bg-solid-secondary-lightest w-100 z-1 maxw-mobile ';
   if (currTab === 'map') {
-    filtersColumnClass +=  (filtersExpanded ? 'd-block' : 'd-none') ;
+    filtersColumnClass +=  (filtersExpanded ? 'd-block' : 'd-none');
   }else{
     filtersColumnClass += 'cell px-4 medium-4 d-medium-block ' + (filtersExpanded ? 'd-block' : 'd-none');
   }
@@ -734,16 +734,16 @@ function App() {
     {/* <button onClick={ e => setFilterValue(!filterValue) }>Filter</button>  */}
 
     <div className="grid-container w-100">
-      <div className="d-flex justify-content-start">
+      <div className="d-flex justify-content-start border-bottom-1">
         {tabMenu.map((tab, index) => (<button key={ index } className={`cursor-pointer p-2 ${tab.id === currTab ? 'bg-solid-primary color-white' : ''}`} onClick={e => setCurrTab(tab.id)}>{tab.title}</button>))}
 
       </div>
 
     </div>
-    <div className={`${currTab !== 'map' ? ' w-100' : ''}`}>
+    <div className={`${currTab !== 'map' ? 'grid-container w-100' : ''}`}>
       <div className="grid-x">
 
-        <div className={`cell px-4 ${currTab === 'map' ? 'medium-4 small-12 medium-order-2' : 'pt-4 medium-8'}`}>
+        <div className={`cell ${currTab === 'map' ? 'medium-4 small-12 medium-order-2  px-4  pt-medium-4' : 'pt-4 medium-8'}`}>
           <div className="mb-4 d-flex align-items-center gx-3 ">
             {currTab === 'list' ?
               <div className="w-100" >
@@ -774,7 +774,7 @@ function App() {
           </div>
 
           <div className={`${currTab === 'map' ? 'd-none d-medium-block' : ''}`}>
-            { currTab !== 'map' && <div className="mb-3">{ renderFiltersButton() }</div> }
+            { currTab !== 'map' && <div className="mb-3 d-medium-none">{ renderFiltersButton() }</div> }
             { filtersActive.length > 0 && <div>
             <h3>Active Filters</h3>
             <div className="d-flex flex-wrap gx-1 gy-1 mb-4 w-100">
@@ -845,7 +845,8 @@ function App() {
             </div>)) }
           </fieldset> 
         
-          <div className={`mt-3 ${currTab === 'map' ? 'd-block' : 'd-medium-none'}`}>
+          <div className={`mt-3 justify-content-between d-flex ${currTab === 'map' ? '' : ' d-medium-none'}`}>
+            <button onClick={ e => { setFilterEligibility([]); setFilterSections([])}}>Clear Filters</button>
             <button className="cursor-pointer button d-block mb-0" onClick={ e => setFiltersExpanded(false) }>Close Filters</button>
           </div>    
         

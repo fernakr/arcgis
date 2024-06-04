@@ -17102,3 +17102,7 @@ address {
 .bg-solid-white{
   background-color: white;
 }
+
+.border-bottom-1{
+  border-bottom: 1px solid #ccc;
+}
