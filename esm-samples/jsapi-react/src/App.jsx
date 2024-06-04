@@ -41,7 +41,7 @@ function App() {
 
   const cemeteryLocation = [-97.726293, 30.266041];
   
-
+  const [locating, setLocating] = React.useState(false);
   const [helpActive, setHelpActive] = React.useState(false);
   const [helpInfo, setHelpInfo] = React.useState(0);
   const [currPage, setCurrPage] = React.useState(0);
@@ -66,6 +66,8 @@ function App() {
   
   const [sort, setSort] = React.useState('name');
   const [sortDirection, setSortDirection] = React.useState('asc');
+
+  const [selectedFeature, setSelectedFeature] = React.useState(null);
 
   // these will be pulled from Craft     
   let eligibilityOptions = [
@@ -175,7 +177,14 @@ function App() {
 
     view.when(() => {
 
-
+      reactiveUtils.watch(
+        () => view.popup.selectedFeature,
+        (graphic) => {
+          setSelectedFeature(graphic);
+        }
+      );
+      
+      
       var layers = map.layers.toArray();
 
       // Filter feature layers
@@ -271,6 +280,7 @@ function App() {
 
 
 
+
         } else {
           // disable pop up from other layers
           featureLayer.popupEnabled = false;
@@ -283,6 +293,8 @@ function App() {
 
 
       });
+
+
 
       const fullscreen = new Fullscreen({
         label: 'Expand',
@@ -301,7 +313,7 @@ function App() {
 
     });
 
-
+    
     view.on('drag', (event) => {
       updateResetActive();
     });
@@ -486,32 +498,45 @@ function App() {
   }
 
   const findMe = () => {
+  
 
+    setLocating(true);
     updateResetActive();
     navigator.geolocation.getCurrentPosition((position) => {
       // Add a marker for the browser's GPS location
       mapDiv.userPositionLayer.removeAll();
-
-
       const userPosition = [position.coords.longitude, position.coords.latitude];
-      const points = [userPosition, cemeteryLocation]; // latter to subbed in with currently selected feature if applicable
 
-      const graphics = points.map((point) => {
+      
+      const target = selectedFeature ? [selectedFeature.geometry.centroid.longitude, selectedFeature.geometry.centroid.latitude]: cemeteryLocation;
+
+      const points = [userPosition, target]; // latter to subbed in with currently selected feature if applicable
+
+      const graphics = points.map((point, index) => {
         return new Graphic({
           geometry: { type: "point", x: point[0], y: point[1] },
-          symbol: {
-            type: 'simple-marker',
-            color: 'red',
-            size: '8px'
+          symbol:  index === 0 ? {
+            type: 'text',  // autocasts as new TextSymbol()
+            color: 'green',
+            text: '\ue61d',  // esri-icon-map-pin
+            font: {  // autocast as new Font()
+              family: 'CalciteWebCoreIcons',
+              size: 12
+            }         
+          } : {
+            type: 'simple-marker',  // autocasts as new TextSymbol()
+            color: 'transparent',
+            outline: {              
+              width: 0
+            },
+            size: '1px'
           }
         });
       });
 
       mapDiv.view.graphics.addMany(graphics);
-
-
-
       mapDiv.view.when(() => {
+        setLocating(false);
         mapDiv.view.goTo({
           target: graphics
         });
@@ -678,7 +703,7 @@ function App() {
           <div className="position-relative">
             <div className="position-absolute z-1 mt-8 pt-8 d-flex flex-column gy-3">
               <button className="cursor-pointer icon--circle text-smaller" onClick={e => setHelpActive(1)}>Help</button>
-              <button className="cursor-pointer icon--circle text-smaller" id="find-me" onClick={findMe}>Find Me</button>
+              <button disabled={ locating } className="cursor-pointer icon--circle text-smaller" id="find-me" onClick={findMe}>{ locating ? 'Finding...' : 'Find Me' }</button>
               <button disabled={!resetActive} id="reset" className="cursor-pointer icon--circle text-smaller" onClick={reset}>Reset</button>
             </div>
             <div className="mapDiv" ref={mapDiv}></div>

@@ -16863,7 +16863,7 @@ button[type=submit]:not(.is-loading) {
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  padding: 0.1666666667rem !important;
+  padding: 0.1666666667rem !important;  
 }
 .icon--circle:hover, .icon--circle:focus {
   color: #fff;
