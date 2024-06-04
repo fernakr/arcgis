@@ -670,7 +670,7 @@ body,
 }
 
 .mb-0 {
-  margin-bottom: 0px;
+  margin-bottom: 0px !important;
 }
 
 .mb-1 {
@@ -17094,4 +17094,12 @@ address {
 
 .maxw-mobile{
   max-width: 768px;
+}
+
+.top-100{
+  top: 100%;
+}
+
+.bg-solid-white{
+  background-color: white;
 }

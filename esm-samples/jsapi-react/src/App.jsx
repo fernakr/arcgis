@@ -555,7 +555,7 @@ function App() {
 
 
 
-        mapDiv.view.popup.dockEnabled = true;
+        mapDiv.view.popup.dockEnabled = false;
         mapDiv.view.popup.open({
           features: [feature]
         });
@@ -631,12 +631,24 @@ function App() {
             {currTab === 'list' ?
               <div className="w-100" >
                 <label htmlFor="searchSearchKeywords">Search by keyword</label>
-                <input type="text" id="searchSearchKeywords" onChange={e => { setSearchKeywords(e.target.value); setSearchName(null) }} />
+                <input type="text" id="searchSearchKeywords" onChange={e => { setSearchKeywords(e.target.value); setSearchName('') }} />
               </div>
               : <>
-                <div id="search-by-name" className="flex-fill">
+                <div id="search-by-name" className="flex-fill position-relative">
                   <label htmlFor="plotholderName">Search by name</label>
-                  <input type="text" id="plotholderName" onChange={e => { setSearchName(e.target.value); setSearchKeywords(null) }} />
+                  <input type="text" id="plotholderName" value={ searchName } className="mb-0" onChange={e => { setSearchName(e.target.value); setSearchKeywords(null) }} />
+                  { searchName && currTab === 'map' && 
+                    <div className="d-medium-none position-absolute top-100 left-0 z-1 p-3 bg-solid-white shadow">
+                      { items.map((item, index) => (<>
+                          <button className="text-left lh-2" onClick={e => { selectObject(item.OBJECTID); setSearchName(''); }} key={index}>
+                            <span className='d-block fw-bold mb-half text-small'>{item.name}</span>
+                            {item.Eligibility && <span className="mb-0 text-smaller">Eligibility: {outputEligibility(item.Eligibility)}</span>}                        
+                          </button>
+                          { index !== items.length - 1 && <hr className="mt-2 mb-1" />}
+                        </>
+                      )) }
+                    </div>
+                    }
                 </div>
                 { renderFiltersButton() }
               </>}
