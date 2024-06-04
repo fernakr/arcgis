@@ -45,6 +45,7 @@ function App() {
   const [helpActive, setHelpActive] = React.useState(false);
   const [helpInfo, setHelpInfo] = React.useState(0);
   const [currPage, setCurrPage] = React.useState(0);
+  const [filtersExpanded, setFiltersExpanded] = React.useState(false);
   
   const [gravesLayer, setGravesLayer] = React.useState(null);
   const [gravesView, setGravesView] = React.useState(null);
@@ -288,7 +289,7 @@ function App() {
         view: view
       });
 
-      console.log(legendValues);
+      //console.log(legendValues);
 
       var legend = new Legend({
         view: view,
@@ -637,16 +638,17 @@ function App() {
         </div>
 
         <div className={`cell px-4 ${currTab === 'map' ? 'medium-4 d-none d-medium-block' : 'pt-4 medium-8'}`}>
-          <div className="mb-4">
+          <div className="mb-4 d-flex align-items-center gx-3">
             {currTab === 'list' ?
-              <div className="">
+              <div className="" >
                 <label htmlFor="searchSearchKeywords">Search by keyword</label>
                 <input type="text" id="searchSearchKeywords" onChange={e => { setSearchKeywords(e.target.value); setSearchName(null) }} />
               </div>
-              : <div>
+              : <div id="search-by-name" className="flex-fill">
                 <label htmlFor="plotholderName">Search by name</label>
                 <input type="text" id="plotholderName" onChange={e => { setSearchName(e.target.value); setSearchKeywords(null) }} />
               </div>}
+              <button onClick={ e => setFiltersExpanded(!filtersExpanded)} className="bg-solid-gray cursor-pointer color-white p-1">Filters { filtersActive.length ? '(' + filtersActive.length + ')' : '' }</button>
           </div>
           <div>
 
@@ -664,7 +666,7 @@ function App() {
             {currPage < pagination.totalPages && <button onClick={e => { setCurrPage(currPage + 1); }}>Next</button>}
           </div>
         </div>
-        <div className={`${currTab === 'map' ? 'd-block pr-5' : 'cell px-4 medium-4'}`}>
+        <div className={`${currTab === 'map' ? ((filtersExpanded ? 'd-block' : 'd-none') + ' pr-5 position-absolute p-4 right-0 bg-solid-secondary-lightest') : 'cell px-4 medium-4'}`}>
           
           <h2>Filters</h2>          
           { filtersActive.length > 0 && <div>
@@ -682,6 +684,7 @@ function App() {
               </label>
             </div>)) }
           </fieldset>     
+          <hr />
           <fieldset>
             <legend>Section</legend>
             { cemeterySections.map((item, index) => (<div key={index} >
@@ -691,7 +694,10 @@ function App() {
                 { item.title }
               </label>
             </div>)) }
-          </fieldset>     
+          </fieldset> 
+          <div className="mt-3">
+            <button className="cursor-pointer button d-block mb-0" onClick={ e => setFiltersExpanded(false) }>Close Filters</button>
+          </div>    
 
         </div>     
       </div>
