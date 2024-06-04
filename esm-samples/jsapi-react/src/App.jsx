@@ -355,7 +355,6 @@ function App() {
   }, [helpActive]);
 
   useEffect(() => {
-    console.log('test');
     const sectionPrefix = '#section-';
     if (hash.includes(sectionPrefix)){
       
@@ -492,23 +491,7 @@ function App() {
     return isMobile ? 16 : 17;
   }
 
-  // hash change
-  window.addEventListener('hashchange', () => {  
-    if (window.location.hash !== hash) setHash(window.location.hash);
-  });
 
-  // when window size is resized update the view
-  window.addEventListener('resize', () => {
-    if (mapDiv.view) {
-      // rotate map 
-      const isMobile = checkMobile();
-      const baseRotation = isMobile ? -90 : 180;
-      const baseZoom = getBaseZoom();
-      mapDiv.view.rotation = 68 + baseRotation;
-      mapDiv.view.zoom = baseZoom;
-
-    }
-  });
 
   const checkMobile = () => {
     return window.innerWidth < 768;
@@ -652,6 +635,27 @@ function App() {
   const renderFiltersButton = () => {
     return (<button onClick={ e => setFiltersExpanded(!filtersExpanded)} className="bg-solid-gray cursor-pointer color-white p-1">Filters { filtersActive.length ? '(' + filtersActive.length + ')' : '' }</button>);
   }
+
+  // only run once on load
+  useEffect(() => {    
+    // hash change  
+    window.addEventListener('hashchange', () => {  
+      if (window.location.hash !== hash) setHash(window.location.hash);
+    });
+
+    // when window size is resized update the view
+    window.addEventListener('resize', () => {
+      if (mapDiv.view) {
+        // rotate map 
+        const isMobile = checkMobile();
+        const baseRotation = isMobile ? -90 : 180;
+        const baseZoom = getBaseZoom();
+        mapDiv.view.rotation = 68 + baseRotation;
+        mapDiv.view.zoom = baseZoom;
+
+      }
+    });
+  }, []);
 
   return (<div className="wrapper">
 
