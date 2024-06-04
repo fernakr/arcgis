@@ -4,26 +4,13 @@ import MapView from "@arcgis/core/views/MapView";
 import WebMap from "@arcgis/core/WebMap";
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import Graphic from '@arcgis/core/Graphic';
-// import Point from '@arcgis/core/geometry/Point';
-// import Extent from '@arcgis/core/geometry/Extent';
-// import BasemapToggle from '@arcgis/core/widgets/BasemapToggle';
-// import PictureMarkerSymbol from '@arcgis/core/symbols/PictureMarkerSymbol';
-// import mapImage from './map.jpg';
-// import * as geodesicUtils from "@arcgis/core/geometry/support/geodesicUtils.js";
-// import Point from '@arcgis/core/geometry/Point';
-// import PopupTemplate from '@arcgis/core/PopupTemplate';
-// import RouteParameters from "@arcgis/core/rest/support/RouteParameters.js";
-// import FeatureSet from "@arcgis/core/rest/support/FeatureSet.js";
-// import * as route from "@arcgis/core/rest/route.js";
+
 import esriConfig from '@arcgis/core/config.js';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import UniqueValueRenderer from '@arcgis/core/renderers/UniqueValueRenderer';
 import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import Legend from '@arcgis/core/widgets/Legend';
 import Fullscreen from '@arcgis/core/widgets/Fullscreen';
-//import Compass from '@arcgis/core/widgets/Compass';
-// import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
-// import Color from '@arcgis/core/Color';
 
 import * as reactiveUtils from '@arcgis/core/core/ReactiveUtils';
 
@@ -72,6 +59,8 @@ function App() {
 
   const [selectedFeature, setSelectedFeature] = React.useState(null);
 
+  const [cemeterySections, setCemeterySections] = React.useState([]);
+
   // these will be pulled from Craft     
   let eligibilityOptions = [
     {
@@ -92,24 +81,24 @@ function App() {
     }
   ]
 
-  const cemeterySections = [
-    {
-      id: 1,
-      title: 'Statesman Meadow'
-    },
-    {
-      id: 2,
-      title: 'Capital Point'
-    },
-    {
-      id: 3,
-      title: 'Monument Hill'
-    },
-    {
-      id: 4,
-      title: 'Confederate Field'
-    }
-  ];
+  // const cemeterySections = [
+  //   {
+  //     id: 1,
+  //     title: 'Statesman Meadow'
+  //   },
+  //   {
+  //     id: 2,
+  //     title: 'Capital Point'
+  //   },
+  //   {
+  //     id: 3,
+  //     title: 'Monument Hill'
+  //   },
+  //   {
+  //     id: 4,
+  //     title: 'Confederate Field'
+  //   }
+  // ];
 
   const findMe = () => {
   
@@ -266,10 +255,10 @@ function App() {
       );
       
       
-      var layers = map.layers.toArray();
+      const layers = map.layers.toArray();
 
       // Filter feature layers
-      var featureLayers = layers.filter(function (layer) {
+      const featureLayers = layers.filter(function (layer) {
         return layer instanceof FeatureLayer;
       });
 
@@ -283,7 +272,7 @@ function App() {
 
           // set the renderer update fill color based off status
           // Create a unique value renderer
-          var renderer = new UniqueValueRenderer({
+          const renderer = new UniqueValueRenderer({
             field: "status",
             //defaultSymbol: fillSymbol,
             uniqueValueInfos: [{
@@ -362,10 +351,32 @@ function App() {
 
 
 
-        } else {
+        } else if (featureLayer.title.includes('Sections')){
           // disable pop up from other layers
           featureLayer.popupEnabled = false;
+          featureLayer.outFields = ['*'];
 
+          //console.log(featureLayer);
+          view.whenLayerView(featureLayer).then(async (layerView) => {
+
+            // // after all features are loaaded           
+            await reactiveUtils.whenOnce(() => !layerView.updating);
+
+            //console.log(layerView);
+            layerView.queryFeatures({              
+              outFields: ['OBJECTID','id', 'name'],
+              returnGeometry: true
+            }).then(async (response) => {
+
+              setCemeterySections(response.features.map(feature => ({
+                ...feature.attributes,        
+                center: feature.geometry ? [feature.geometry.centroid.longitude, feature.geometry.centroid.latitude] : null,
+                title: feature.attributes.name
+              })));              
+
+            }
+            );
+          });
           // legendValues.push(legendValues.concat([{
           //   layer: featureLayer,
           //   title: "Legend"
@@ -405,7 +416,7 @@ function App() {
 
       
 
-      var legend = new Legend({
+      const legend = new Legend({
         view: view,
         layerInfos: legendValues[0]
       });
@@ -490,7 +501,7 @@ function App() {
     }
 
     setFiltersActive(filters);
-  }, [filterEligibility, filterSections, filterValue, gravesView, searchName, searchSearchKeywords]);
+  }, [filterEligibility, filterSections,cemeterySections, filterValue, gravesView, searchName, searchSearchKeywords]);
 
 
   useEffect(() => {
@@ -612,7 +623,7 @@ function App() {
     }).then(function (results) {
 
       if (results.features.length > 0) {
-        var feature = results.features[0];
+        const feature = results.features[0];
 
         // Zoom to the feature
 
@@ -636,6 +647,15 @@ function App() {
     })
   };
 
+  const zoomToSection = (sectionId) => {
+    const section = cemeterySections.find(section => section.id.toString() === sectionId);
+    const sectionCenter = section.center;
+    mapDiv.view.goTo({
+      target: sectionCenter,
+      zoom: 18
+    });
+  }
+
   const updateFilterEligibility = (e) => {
     // grab all checked checkboxes with this name
     const checkboxes = document.querySelectorAll('input[name="eligibility"]');
@@ -656,7 +676,8 @@ function App() {
   }
 
   const outputCemeterySection = (sectionId) => {
-    return (<button className="cursor-pointer text-decoration-underline color-primary text-decoration-none-hover" onClick={e => setFilterSections([sectionId])}>{ cemeterySections.find(section => section.id.toString() === sectionId).title }</button>);
+    if (cemeterySections.length === 0) return;
+    return (<button className="cursor-pointer text-decoration-underline color-primary text-decoration-none-hover" onClick={e =>{ setFilterSections([sectionId]); zoomToSection(sectionId) }}>{ cemeterySections.find(section => section.id.toString() === sectionId).title }</button>);
   }
 
   const removeFilter = (filter) => {
