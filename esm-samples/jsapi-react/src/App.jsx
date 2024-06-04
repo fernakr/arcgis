@@ -470,11 +470,13 @@ function App() {
     const resetButton = helpButtons.find(button => button.id === 'reset');    
   }, [resetActive]);
   useEffect(() => {
+
     const sectionPrefix = '#section-';
     if (hash.includes(sectionPrefix)){
       
       const sectionId = hash.replace(sectionPrefix, '');
       setFilterSections([sectionId]);
+      if (cemeterySections.length > 0) zoomToSection(sectionId);
     }
   }, [hash]);
 
