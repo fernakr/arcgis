@@ -66,7 +66,7 @@ function App() {
   const [sortDirection, setSortDirection] = React.useState('asc');
 
   // these will be pulled from Craft     
-  const eligibilityOptions = [
+  let eligibilityOptions = [
     {
       id: 10,
       title: 'Governor'
@@ -103,6 +103,7 @@ function App() {
       title: 'Confederate Field'
     }
   ];
+
 
   const tabMenu = [
     {
@@ -647,7 +648,7 @@ function App() {
             <legend>Eligibility Reason</legend>
             { eligibilityOptions.map((item, index) => (<div key={index} >
               <label key={ index }>
-                <input type="checkbox" value={ item.id } defaultChecked={ filterEligibility.includes(item.id)} name="eligibility" onChange={ updateFilterEligibility } />
+                <input type="checkbox" checked={ filterEligibility.includes(item.id.toString())} value={ item.id }  name="eligibility" onChange={ updateFilterEligibility } />
                 { item.title }
               </label>
             </div>)) }
@@ -656,7 +657,8 @@ function App() {
             <legend>Section</legend>
             { cemeterySections.map((item, index) => (<div key={index} >
               <label key={ index }>
-                <input type="checkbox" defaultChecked={ filterSections.includes(item.id) } value={ item.id } name="section" onChange={ updateFilterSections } />
+                { filterSections.includes(item.id) }
+                <input type="checkbox" checked={ filterSections.includes(item.id.toString()) } value={ item.id } name="section" onChange={ updateFilterSections } />
                 { item.title }
               </label>
             </div>)) }
