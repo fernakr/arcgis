@@ -302,7 +302,7 @@ function App() {
     });
 
     view.watch('zoom', (event) => {
-
+      setResetActive(true);
       updateGraveLayerVisibility(event);
     });
 
@@ -457,7 +457,7 @@ function App() {
 
   const findMe = () => {
 
-
+    setResetActive(true);
     navigator.geolocation.getCurrentPosition((position) => {
       // Add a marker for the browser's GPS location
       mapDiv.userPositionLayer.removeAll();
@@ -495,6 +495,7 @@ function App() {
   }
 
   const reset = () => {
+    setResetActive(false);
     mapDiv.view.goTo({
       target: cemeteryLocation,
       zoom: 17
@@ -551,9 +552,10 @@ function App() {
   const outputEligibility = (eligibilityString) => {
     const eligibilityOption = eligibilityString.split('|').filter(eligibility => eligibility != '').map(eligibility => eligibilityOptions.find(option => option.id.toString() === eligibility).title);
     return eligibilityOption.join(', ');
+  }
 
-
-    //return .title)
+  const outputCemeterySection = (sectionId) => {
+    return (<button className="text-decoration-underline" onClick={e => setFilterSections([sectionId])}>{ cemeterySections.find(section => section.id.toString() === sectionId).title }</button>);
   }
 
   const removeFilter = (filter) => {
@@ -573,7 +575,7 @@ function App() {
 
     <div className="grid-container w-100">
       <div className="d-flex justify-content-start">
-        {tabMenu.map((tab, index) => (<button className={`p-2 ${tab.id === currTab ? 'bg-solid-primary color-white' : ''}`} onClick={e => setCurrTab(tab.id)}>{tab.title}</button>))}
+        {tabMenu.map((tab, index) => (<button key={ index } className={`p-2 ${tab.id === currTab ? 'bg-solid-primary color-white' : ''}`} onClick={e => setCurrTab(tab.id)}>{tab.title}</button>))}
 
       </div>
 
@@ -594,11 +596,11 @@ function App() {
                 {helpInfo.description}
 
                 <div className="d-block">
-                  {helpActive > 1 && <button class="color-inherit" onClick={e => setHelpActive(helpActive - 1)}>Previous</button>}
-                  {helpActive === helpStates.length && <button class="color-inherit" onClick={e => setHelpActive(false)}>Get Started</button>}
-                  {helpActive < helpStates.length && <button class="color-inherit" onClick={e => setHelpActive(helpActive + 1)}>Next</button>}
+                  {helpActive > 1 && <button className="color-inherit" onClick={e => setHelpActive(helpActive - 1)}>Previous</button>}
+                  {helpActive === helpStates.length && <button className="color-inherit" onClick={e => setHelpActive(false)}>Get Started</button>}
+                  {helpActive < helpStates.length && <button className="color-inherit" onClick={e => setHelpActive(helpActive + 1)}>Next</button>}
                 </div>
-                <div class="bg-solid-primary-darker d-inline-block p-1 position-absolute right-0 bottom-0" >{helpActive} of {helpStates.length}</div>
+                <div className="bg-solid-primary-darker d-inline-block p-1 position-absolute right-0 bottom-0" >{helpActive} of {helpStates.length}</div>
               </div>
             }
           </div>
@@ -622,7 +624,8 @@ function App() {
           {items.map((item, index) => (<div key={index} className="mb-4">
 
             <h4>{item.name}</h4>
-            {item.Eligibility && <p>Eligibility: {outputEligibility(item.Eligibility)}</p>}
+            {item.Eligibility && <p className="mb-0">Eligibility: {outputEligibility(item.Eligibility)}</p>}
+            {item.cemeterySection && <p>Section: {outputCemeterySection(item.cemeterySection)}</p>}
             <button className="button" onClick={e => selectObject(item.OBJECTID)}>View on Map</button>
             <hr />
           </div>))}
@@ -631,20 +634,20 @@ function App() {
             {currPage < pagination.totalPages && <button onClick={e => { setCurrPage(currPage + 1); }}>Next</button>}
           </div>
         </div>
-        <div className={`${currTab === 'map' ? 'd-block' : 'cell px-4 medium-4'}`}>
+        <div className={`${currTab === 'map' ? 'd-block pr-5' : 'cell px-4 medium-4'}`}>
           
           <h2>Filters</h2>          
           { filtersActive.length > 0 && <div>
-            <h3>Filters</h3>
-            <ul>
-              { filtersActive.map((filter, index) => (<button onClick={ e => removeFilter(filter) } key={index}>{ filter.title }</button>)) }
-            </ul>
+            <h3>Active Filters</h3>
+            <div className="d-flex flex-wrap gx-1 gy-1 mb-4 w-100">
+              { filtersActive.map((filter, index) => (<button className="bg-solid-gray color-white p-1 text-small fw-bold" key={ index } onClick={ e => removeFilter(filter) } >X { filter.title }</button>)) }
+            </div>
           </div> }
           <fieldset>
             <legend>Eligibility Reason</legend>
             { eligibilityOptions.map((item, index) => (<div key={index} >
-              <label>
-                <input type="checkbox" value={ item.id } name="eligibility" onChange={ updateFilterEligibility } />
+              <label key={ index }>
+                <input type="checkbox" value={ item.id } defaultChecked={ filterEligibility.includes(item.id)} name="eligibility" onChange={ updateFilterEligibility } />
                 { item.title }
               </label>
             </div>)) }
@@ -652,8 +655,8 @@ function App() {
           <fieldset>
             <legend>Section</legend>
             { cemeterySections.map((item, index) => (<div key={index} >
-              <label>
-                <input type="checkbox" value={ item.id } name="section" onChange={ updateFilterSections } />
+              <label key={ index }>
+                <input type="checkbox" defaultChecked={ filterSections.includes(item.id) } value={ item.id } name="section" onChange={ updateFilterSections } />
                 { item.title }
               </label>
             </div>)) }

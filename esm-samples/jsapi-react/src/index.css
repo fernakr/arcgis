@@ -17079,3 +17079,7 @@ address {
 .right-0{
   right: 0;
 }
+
+.text-decoration-underline{
+  text-decoration: underline;
+}
