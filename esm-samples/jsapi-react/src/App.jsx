@@ -398,6 +398,10 @@ function App() {
 
   
 
+      document.addEventListener("fullscreenchange", function() {
+        helpButtons[0].element.style.display = document.fullscreenElement ? 'none' : 'block';
+        
+      });
 
       
 
@@ -452,8 +456,7 @@ function App() {
   }, [helpActive]);
 
   useEffect(() => {
-    const resetButton = helpButtons.find(button => button.id === 'reset');
-    console.log(resetButton);
+    const resetButton = helpButtons.find(button => button.id === 'reset');    
   }, [resetActive]);
   useEffect(() => {
     const sectionPrefix = '#section-';
