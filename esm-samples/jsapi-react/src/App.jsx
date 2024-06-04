@@ -597,6 +597,18 @@ function App() {
       const newFilters = filterSections.filter(section => section !== filter.id.toString());
       setFilterSections(newFilters);
     }
+ 
+  }
+
+  let filtersColumnClass = 'pr-5 position-absolute p-4 right-0 bg-solid-secondary-lightest w-100 z-1 maxw-mobile ';
+  if (currTab === 'map') {
+    filtersColumnClass +=  (filtersExpanded ? 'd-block' : 'd-none') ;
+  }else{
+    filtersColumnClass += 'cell px-4 medium-4 d-medium-block ' + (filtersExpanded ? 'd-block' : 'd-none');
+  }
+  
+  const renderFiltersButton = () => {
+    return (<button onClick={ e => setFiltersExpanded(!filtersExpanded)} className="bg-solid-gray cursor-pointer color-white p-1">Filters { filtersActive.length ? '(' + filtersActive.length + ')' : '' }</button>);
   }
 
   return (<div className="wrapper">
@@ -614,7 +626,43 @@ function App() {
     <div className={`${currTab !== 'map' ? ' w-100' : ''}`}>
       <div className="grid-x">
 
-        <div className={"cell medium-auto " + (currTab !== 'map' ? 'd-none' : '')} >
+        <div className={`cell px-4 ${currTab === 'map' ? 'medium-4 small-12 medium-order-2' : 'pt-4 medium-8'}`}>
+          <div className="mb-4 d-flex align-items-center gx-3 ">
+            {currTab === 'list' ?
+              <div className="w-100" >
+                <label htmlFor="searchSearchKeywords">Search by keyword</label>
+                <input type="text" id="searchSearchKeywords" onChange={e => { setSearchKeywords(e.target.value); setSearchName(null) }} />
+              </div>
+              : <>
+                <div id="search-by-name" className="flex-fill">
+                  <label htmlFor="plotholderName">Search by name</label>
+                  <input type="text" id="plotholderName" onChange={e => { setSearchName(e.target.value); setSearchKeywords(null) }} />
+                </div>
+                { renderFiltersButton() }
+              </>}
+              
+              
+          </div>
+
+          <div className={`${currTab === 'map' ? 'd-none d-medium-block' : ''}`}>
+            { currTab !== 'map' && <div className="mb-3">{ renderFiltersButton() }</div> }
+            {items.map((item, index) => (<div key={index} className="mb-4">
+
+              <h4>{item.name}</h4>
+              {item.Eligibility && <p className="mb-0">Eligibility: {outputEligibility(item.Eligibility)}</p>}
+              {item.cemeterySection && <p>Section: {outputCemeterySection(item.cemeterySection)}</p>}
+              <button className="button" onClick={e => selectObject(item.OBJECTID)}>View on Map</button>
+              <hr />
+            </div>))}
+            <div className="pagination">
+              {currPage > 0 && <button onClick={e => { setCurrPage(currPage - 1); }}>Previous</button>}
+              {currPage < pagination.totalPages && <button onClick={e => { setCurrPage(currPage + 1); }}>Next</button>}
+            </div>
+          </div>
+          
+        
+        </div>
+        <div className={"cell medium-auto " + (currTab !== 'map' ? 'd-none' : 'medium-order-1')} >
           <div className="position-relative">
             <div className="position-absolute z-1 mt-8 pt-8 d-flex flex-column gy-3">
               <button className="cursor-pointer icon--circle text-smaller" onClick={e => setHelpActive(1)}>Help</button>
@@ -637,40 +685,7 @@ function App() {
           </div>
         </div>
 
-        <div className={`cell px-4 ${currTab === 'map' ? 'medium-4 d-none d-medium-block' : 'pt-4 medium-8'}`}>
-          <div className="mb-4 d-flex align-items-center gx-3">
-            {currTab === 'list' ?
-              <div className="w-100" >
-                <label htmlFor="searchSearchKeywords">Search by keyword</label>
-                <input type="text" id="searchSearchKeywords" onChange={e => { setSearchKeywords(e.target.value); setSearchName(null) }} />
-              </div>
-              : <>
-                <div id="search-by-name" className="flex-fill">
-                  <label htmlFor="plotholderName">Search by name</label>
-                  <input type="text" id="plotholderName" onChange={e => { setSearchName(e.target.value); setSearchKeywords(null) }} />
-                </div>
-                <button onClick={ e => setFiltersExpanded(!filtersExpanded)} className="bg-solid-gray cursor-pointer color-white p-1">Filters { filtersActive.length ? '(' + filtersActive.length + ')' : '' }</button>
-              </>}
-              
-              
-          </div>
-          <div>
-
-          </div>
-          {items.map((item, index) => (<div key={index} className="mb-4">
-
-            <h4>{item.name}</h4>
-            {item.Eligibility && <p className="mb-0">Eligibility: {outputEligibility(item.Eligibility)}</p>}
-            {item.cemeterySection && <p>Section: {outputCemeterySection(item.cemeterySection)}</p>}
-            <button className="button" onClick={e => selectObject(item.OBJECTID)}>View on Map</button>
-            <hr />
-          </div>))}
-          <div className="pagination">
-            {currPage > 0 && <button onClick={e => { setCurrPage(currPage - 1); }}>Previous</button>}
-            {currPage < pagination.totalPages && <button onClick={e => { setCurrPage(currPage + 1); }}>Next</button>}
-          </div>
-        </div>
-        <div className={`${currTab === 'map' ? ((filtersExpanded ? 'd-block' : 'd-none') + ' pr-5 position-absolute p-4 right-0 bg-solid-secondary-lightest') : 'cell px-4 medium-4'}`}>
+        <div className={ filtersColumnClass }>
           
           <h2>Filters</h2>          
           { filtersActive.length > 0 && <div>
@@ -699,9 +714,11 @@ function App() {
               </label>
             </div>)) }
           </fieldset> 
-          <div className="mt-3">
+        
+          <div className={`mt-3 ${currTab === 'map' ? 'd-block' : 'd-medium-none'}`}>
             <button className="cursor-pointer button d-block mb-0" onClick={ e => setFiltersExpanded(false) }>Close Filters</button>
           </div>    
+        
 
         </div>     
       </div>

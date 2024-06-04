@@ -17091,3 +17091,7 @@ address {
 .cursor-pointer{
   cursor: pointer;
 }
+
+.maxw-mobile{
+  max-width: 768px;
+}
