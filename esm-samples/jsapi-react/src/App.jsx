@@ -640,15 +640,19 @@ function App() {
         <div className={`cell px-4 ${currTab === 'map' ? 'medium-4 d-none d-medium-block' : 'pt-4 medium-8'}`}>
           <div className="mb-4 d-flex align-items-center gx-3">
             {currTab === 'list' ?
-              <div className="" >
+              <div className="w-100" >
                 <label htmlFor="searchSearchKeywords">Search by keyword</label>
                 <input type="text" id="searchSearchKeywords" onChange={e => { setSearchKeywords(e.target.value); setSearchName(null) }} />
               </div>
-              : <div id="search-by-name" className="flex-fill">
-                <label htmlFor="plotholderName">Search by name</label>
-                <input type="text" id="plotholderName" onChange={e => { setSearchName(e.target.value); setSearchKeywords(null) }} />
-              </div>}
-              <button onClick={ e => setFiltersExpanded(!filtersExpanded)} className="bg-solid-gray cursor-pointer color-white p-1">Filters { filtersActive.length ? '(' + filtersActive.length + ')' : '' }</button>
+              : <>
+                <div id="search-by-name" className="flex-fill">
+                  <label htmlFor="plotholderName">Search by name</label>
+                  <input type="text" id="plotholderName" onChange={e => { setSearchName(e.target.value); setSearchKeywords(null) }} />
+                </div>
+                <button onClick={ e => setFiltersExpanded(!filtersExpanded)} className="bg-solid-gray cursor-pointer color-white p-1">Filters { filtersActive.length ? '(' + filtersActive.length + ')' : '' }</button>
+              </>}
+              
+              
           </div>
           <div>
 
