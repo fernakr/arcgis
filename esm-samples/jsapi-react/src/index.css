@@ -17083,3 +17083,11 @@ address {
 .text-decoration-underline{
   text-decoration: underline;
 }
+
+.text-decoration-none-hover:hover{  
+  text-decoration: none;
+}
+
+.cursor-pointer{
+  cursor: pointer;
+}

@@ -40,6 +40,7 @@ function App() {
 
 
   const cemeteryLocation = [-97.726293, 30.266041];
+  
 
   const [helpActive, setHelpActive] = React.useState(false);
   const [helpInfo, setHelpInfo] = React.useState(0);
@@ -150,7 +151,7 @@ function App() {
     const isMobile = checkMobile();
     // base rotation of mobile or desktop
     const baseRotation = isMobile ? -90 : 180;
-    const baseZoom = isMobile ? 16 : 17;
+    const baseZoom = getBaseZoom();
     const view = new MapView({
       container: mapDiv.current,
       map: map,
@@ -227,7 +228,7 @@ function App() {
 
             // after all features are loaaded           
             await reactiveUtils.whenOnce(() => !layerView.updating);
-
+            updateResetActive();
             updateResults(layerView, false);
             if (selectedObjectId) {
               selectObject(selectedObjectId, layerView);
@@ -299,11 +300,11 @@ function App() {
 
 
     view.on('drag', (event) => {
-      setResetActive(true);
+      updateResetActive();
     });
 
     view.watch('zoom', (event) => {
-      setResetActive(true);
+      updateResetActive();
       updateGraveLayerVisibility(event);
     });
 
@@ -375,6 +376,26 @@ function App() {
     gravesLayer.visible = true; // zoom > 17;
   }
 
+  const updateResetActive = () => {    
+    // if the map is not at the default location and zoom is not default zoom
+
+    const formatCoordinates = (coordinate) => {
+      return coordinate.toFixed(2);
+    }
+
+    const currCenter =[
+      formatCoordinates(mapDiv.view.center.longitude),
+      formatCoordinates(mapDiv.view.center.latitude)
+    ];
+
+
+    const isCentered = currCenter[0] === formatCoordinates(cemeteryLocation[0]) && currCenter[1] === formatCoordinates(cemeteryLocation[1]);
+    
+    const isZoomed = mapDiv.view.zoom === getBaseZoom();
+    setResetActive(!isCentered || !isZoomed);
+
+  }
+
   const updateResults = (layerView = gravesView) => {
 
 
@@ -439,13 +460,18 @@ function App() {
 
   }
 
+  const getBaseZoom = () => {
+    const isMobile = checkMobile();
+    return isMobile ? 16 : 17;
+  }
+
   // when window size is resized update the view
   window.addEventListener('resize', () => {
     if (mapDiv.view) {
       // rotate map 
       const isMobile = checkMobile();
       const baseRotation = isMobile ? -90 : 180;
-      const baseZoom = isMobile ? 16 : 17;
+      const baseZoom = getBaseZoom();
       mapDiv.view.rotation = 68 + baseRotation;
       mapDiv.view.zoom = baseZoom;
 
@@ -458,7 +484,7 @@ function App() {
 
   const findMe = () => {
 
-    setResetActive(true);
+    updateResetActive();
     navigator.geolocation.getCurrentPosition((position) => {
       // Add a marker for the browser's GPS location
       mapDiv.userPositionLayer.removeAll();
@@ -495,11 +521,12 @@ function App() {
 
   }
 
-  const reset = () => {
-    setResetActive(false);
+  const reset = () => {    
     mapDiv.view.goTo({
       target: cemeteryLocation,
-      zoom: 17
+      zoom: getBaseZoom()
+    }).then(() => {
+      updateResetActive();
     });
   }
 
@@ -556,7 +583,7 @@ function App() {
   }
 
   const outputCemeterySection = (sectionId) => {
-    return (<button className="text-decoration-underline" onClick={e => setFilterSections([sectionId])}>{ cemeterySections.find(section => section.id.toString() === sectionId).title }</button>);
+    return (<button className="cursor-pointer text-decoration-underline color-primary text-decoration-none-hover" onClick={e => setFilterSections([sectionId])}>{ cemeterySections.find(section => section.id.toString() === sectionId).title }</button>);
   }
 
   const removeFilter = (filter) => {
@@ -576,7 +603,7 @@ function App() {
 
     <div className="grid-container w-100">
       <div className="d-flex justify-content-start">
-        {tabMenu.map((tab, index) => (<button key={ index } className={`p-2 ${tab.id === currTab ? 'bg-solid-primary color-white' : ''}`} onClick={e => setCurrTab(tab.id)}>{tab.title}</button>))}
+        {tabMenu.map((tab, index) => (<button key={ index } className={`cursor-pointer p-2 ${tab.id === currTab ? 'bg-solid-primary color-white' : ''}`} onClick={e => setCurrTab(tab.id)}>{tab.title}</button>))}
 
       </div>
 
@@ -587,9 +614,9 @@ function App() {
         <div className={"cell medium-auto " + (currTab !== 'map' ? 'd-none' : '')} >
           <div className="position-relative">
             <div className="position-absolute z-1 mt-8 pt-8 d-flex flex-column gy-3">
-              <button className="icon--circle text-smaller" onClick={e => setHelpActive(1)}>Help</button>
-              <button className="icon--circle text-smaller" id="find-me" onClick={findMe}>Find Me</button>
-              <button disabled={!resetActive} id="reset" className="icon--circle text-smaller" onClick={reset}>Reset</button>
+              <button className="cursor-pointer icon--circle text-smaller" onClick={e => setHelpActive(1)}>Help</button>
+              <button className="cursor-pointer icon--circle text-smaller" id="find-me" onClick={findMe}>Find Me</button>
+              <button disabled={!resetActive} id="reset" className="cursor-pointer icon--circle text-smaller" onClick={reset}>Reset</button>
             </div>
             <div className="mapDiv" ref={mapDiv}></div>
             {helpActive &&
@@ -641,7 +668,7 @@ function App() {
           { filtersActive.length > 0 && <div>
             <h3>Active Filters</h3>
             <div className="d-flex flex-wrap gx-1 gy-1 mb-4 w-100">
-              { filtersActive.map((filter, index) => (<button className="bg-solid-gray color-white p-1 text-small fw-bold" key={ index } onClick={ e => removeFilter(filter) } >X { filter.title }</button>)) }
+              { filtersActive.map((filter, index) => (<button className="cursor-pointer bg-solid-gray color-white p-1 text-small fw-bold" key={ index } onClick={ e => removeFilter(filter) } >X { filter.title }</button>)) }
             </div>
           </div> }
           <fieldset>
