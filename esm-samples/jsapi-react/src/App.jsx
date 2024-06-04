@@ -29,6 +29,8 @@ import * as reactiveUtils from '@arcgis/core/core/ReactiveUtils';
 
 import "./App.css";
 
+
+
 function App() {
 
   const mapDiv = useRef(null);
@@ -41,6 +43,7 @@ function App() {
 
   const cemeteryLocation = [-97.726293, 30.266041];
   
+  const [hash, setHash] = React.useState(window.location.hash);
   const [locating, setLocating] = React.useState(false);
   const [helpActive, setHelpActive] = React.useState(false);
   const [helpInfo, setHelpInfo] = React.useState(0);
@@ -351,6 +354,15 @@ function App() {
     }
   }, [helpActive]);
 
+  useEffect(() => {
+    console.log('test');
+    const sectionPrefix = '#section-';
+    if (hash.includes(sectionPrefix)){
+      
+      const sectionId = hash.replace(sectionPrefix, '');
+      setFilterSections([sectionId]);
+    }
+  }, [hash]);
 
   useEffect(() => {
     let filters = [];
@@ -479,6 +491,11 @@ function App() {
     const isMobile = checkMobile();
     return isMobile ? 16 : 17;
   }
+
+  // hash change
+  window.addEventListener('hashchange', () => {  
+    if (window.location.hash !== hash) setHash(window.location.hash);
+  });
 
   // when window size is resized update the view
   window.addEventListener('resize', () => {
@@ -734,8 +751,8 @@ function App() {
           <fieldset>
             <legend>Eligibility Reason</legend>
             { eligibilityOptions.map((item, index) => (<div key={index} >
-              <label key={ index }>
-                <input type="checkbox" checked={ filterEligibility.includes(item.id.toString())} value={ item.id }  name="eligibility" onChange={ updateFilterEligibility } />
+              <label key={ index } className="fw-normal">
+                <input type="checkbox"  checked={ filterEligibility.includes(item.id.toString())} value={ item.id }  name="eligibility" onChange={ updateFilterEligibility } />
                 { item.title }
               </label>
             </div>)) }
@@ -744,7 +761,7 @@ function App() {
           <fieldset>
             <legend>Section</legend>
             { cemeterySections.map((item, index) => (<div key={index} >
-              <label key={ index }>
+              <label key={ index } className="fw-normal">
                 { filterSections.includes(item.id) }
                 <input type="checkbox" checked={ filterSections.includes(item.id.toString()) } value={ item.id } name="section" onChange={ updateFilterSections } />
                 { item.title }
