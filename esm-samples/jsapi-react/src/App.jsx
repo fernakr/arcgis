@@ -304,7 +304,39 @@ function App() {
         view: view
       });
 
-      //console.log(legendValues);
+      
+      const helpButtons = [
+        {
+          text: 'Help',
+          id: 'help',
+          action: e => setHelpActive(1)          
+        },
+        {
+          text: 'Find Me',
+          id: 'find-me',
+          action: findMe          
+        },
+        {
+          text: 'Reset',
+          id: 'reset',
+          action: reset          
+        }
+      ]
+
+      for (let i = 0; i < helpButtons.length; i++) {
+        const helpButton = document.createElement("button");
+        helpButton.innerHTML = helpButtons[i].text;
+        helpButton.id = helpButtons[i].id;
+        helpButton.classList.add("esri-widget", "esri-widget--button", "esri-interactive", "esri-reset-button");
+        helpButton.addEventListener("click", helpButtons[i].action);
+        view.ui.add(helpButton, "top-left");
+      }
+      
+
+  
+
+
+      
 
       var legend = new Legend({
         view: view,
@@ -329,6 +361,8 @@ function App() {
     view.on('pointer-leave', (event) => {
       document.body.style.cursor = "auto";
     });
+
+
 
 
   }, [mapDiv]);
@@ -722,11 +756,11 @@ function App() {
         </div>
         <div className={"cell medium-auto " + (currTab !== 'map' ? 'd-none' : 'medium-order-1')} >
           <div className="position-relative">
-            <div className="position-absolute z-1 mt-8 pt-8 d-flex flex-column gy-3">
+            {/* <div id="help-buttons" className="position-absolute z-1 mt-8 pt-8 d-flex flex-column gy-3">
               <button className="cursor-pointer icon--circle text-smaller" onClick={e => setHelpActive(1)}>Help</button>
               <button disabled={ locating } className="cursor-pointer icon--circle text-smaller" id="find-me" onClick={findMe}>{ locating ? 'Finding...' : 'Find Me' }</button>
               <button disabled={!resetActive} id="reset" className="cursor-pointer icon--circle text-smaller" onClick={reset}>Reset</button>
-            </div>
+            </div> */}
             <div className="mapDiv" ref={mapDiv}></div>
             {helpActive &&
               <div className="help-info bg-solid-primary color-white p-3 position-relative" style={{ top: helpInfo.top, left: helpInfo.left, width: 300 }}>
