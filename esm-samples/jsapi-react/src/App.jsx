@@ -70,15 +70,15 @@ function App() {
       title: 'Governor'
     },
     {
-      id: 14,
+      id: 19,
       title: 'Senator'
     },
     {
-      id: 30,
+      id: 16,
       title: 'Representative'
     },
     {
-      id: 40,
+      id: 15,
       title: 'President'
     }
   ]
@@ -220,10 +220,6 @@ function App() {
       showAttribution: false,
       places: false
     });
-
-
-
-
     const isMobile = checkMobile();
     // base rotation of mobile or desktop
     const baseRotation = isMobile ? -90 : 180;
@@ -261,172 +257,177 @@ function App() {
       const layers = map.layers.toArray();
 
       // Filter feature layers
+
+      
       const featureLayers = layers.filter(function (layer) {
         return layer instanceof FeatureLayer;
       });
 
       let legendValues = [];
-      featureLayers.forEach(function (featureLayer) {
+      // featureLayers.forEach(function (featureLayer) {
+        
+      //   if (featureLayer.title.includes('Graves')) {
+          
+      //     setGravesLayer(featureLayer);
+      //     featureLayer.outFields = ['*'];
+      //     //graveLayer.visible = false;
 
-        if (featureLayer.title.includes('Graves')) {
-          setGravesLayer(featureLayer);
-          featureLayer.outFields = ['*'];
-          //graveLayer.visible = false;
+      //     // set the renderer update fill color based off status
+      //     // Create a unique value renderer
+      //     const renderer = new UniqueValueRenderer({
+      //       field: "status",
+      //       //defaultSymbol: fillSymbol,
+      //       uniqueValueInfos: [{
+      //         value: "occupied",
+      //         symbol: new SimpleFillSymbol({
+      //           color: "green"
+      //         }),
+      //         label: "Occupied"
+      //       },
+      //       {
+      //         value: "vacant",
+      //         symbol: new SimpleFillSymbol({
+      //           color: "yellow"
+      //         }),
+      //         label: "Vacant"
+      //       },
+      //         // Add more unique values as needed
+      //       ]
+      //     });
 
-          // set the renderer update fill color based off status
-          // Create a unique value renderer
-          const renderer = new UniqueValueRenderer({
-            field: "status",
-            //defaultSymbol: fillSymbol,
-            uniqueValueInfos: [{
-              value: "occupied",
-              symbol: new SimpleFillSymbol({
-                color: "green"
-              }),
-              label: "Occupied"
-            },
-            {
-              value: "vacant",
-              symbol: new SimpleFillSymbol({
-                color: "yellow"
-              }),
-              label: "Vacant"
-            },
-              // Add more unique values as needed
-            ]
-          });
+      //     legendValues.push(legendValues.concat([{
+      //       layer: featureLayer,
+      //       title: "Legend"
+      //     }]));
 
-          legendValues.push(legendValues.concat([{
-            layer: featureLayer,
-            title: "Legend"
-          }]));
+      //     // Set the renderer to the feature layer
+      //     featureLayer.renderer = renderer;
 
-          // Set the renderer to the feature layer
-          featureLayer.renderer = renderer;
-
-          // Create a new layer view for the feature layer
+      //     // Create a new layer view for the feature layer
         
 
-          view.whenLayerView(featureLayer).then(async (layerView) => {
+      //     view.whenLayerView(featureLayer).then(async (layerView) => {
 
-            // after all features are loaaded           
-            await reactiveUtils.whenOnce(() => !layerView.updating);
-            updateResetActive();
-            updateResults(layerView, false);
-            if (selectedObjectId) {
-              selectObject(selectedObjectId, layerView);
-            }
-            setGravesView(layerView);
-            //updateGraveLayerVisibility(layerView);
-          });
+      //       // after all features are loaaded           
+      //       await reactiveUtils.whenOnce(() => !layerView.updating);
+      //       updateResetActive();
+      //       updateResults(layerView, false);
+      //       if (selectedObjectId) {
+      //         selectObject(selectedObjectId, layerView);
+      //       }
+      //       setGravesView(layerView);
+      //       //updateGraveLayerVisibility(layerView);
+      //     });
 
-          // add images to the feature layer
-          featureLayer.popupTemplate = {
-            title: '{name}',
-            content: [{
-              type: "fields", // Autocast as new FieldsContent()
-              // Autocast as new FieldInfo[]
-              fieldInfos: [{
-                fieldName: "birthdate",
-                label: "Birth Date",
-                // Autocast as new FieldInfoFormat()
-                // format: {
-                //   places: 0,
-                //   digitSeparator: true
-                // }
-              }]
-            }, {
+      //     // add images to the feature layer
+      //     featureLayer.popupTemplate = {
+      //       title: '{name}',
+      //       content: [{
+      //         type: "fields", // Autocast as new FieldsContent()
+      //         // Autocast as new FieldInfo[]
+      //         fieldInfos: [{
+      //           fieldName: "birthdate",
+      //           label: "Birth Date",
+      //           // Autocast as new FieldInfoFormat()
+      //           // format: {
+      //           //   places: 0,
+      //           //   digitSeparator: true
+      //           // }
+      //         }]
+      //       }, {
 
-              // Autocasts as new MediaContent()
-              type: "media",
-              mediaInfos: [{
-                title: "<b>Headshot</b>",
-                type: "image", // Autocasts as new ImageMediaInfo()
-                caption: "Headshot description here",
-                // Autocasts as new ImageMediaInfoValue()
-                value: {
-                  sourceURL: "{headshot}"
-                }
-              }]
-            }]
-          }
-
-
-
-
-        } else if (featureLayer.title.includes('Sections')){
-          // disable pop up from other layers
-          featureLayer.popupEnabled = false;
-          featureLayer.outFields = ['*'];
-
-          //console.log(featureLayer);
-          view.whenLayerView(featureLayer).then(async (layerView) => {
-
-            // // after all features are loaaded           
-            await reactiveUtils.whenOnce(() => !layerView.updating);
-
-            //console.log(layerView);
-            layerView.queryFeatures({              
-              outFields: ['OBJECTID','id', 'name'],
-              returnGeometry: true
-            }).then(async (response) => {
-
-              setCemeterySections(response.features.map(feature => ({
-                ...feature.attributes,        
-                center: feature.geometry ? [feature.geometry.centroid.longitude, feature.geometry.centroid.latitude] : null,
-                title: feature.attributes.name
-              })));              
-
-            }
-            );
-          });
-          // legendValues.push(legendValues.concat([{
-          //   layer: featureLayer,
-          //   title: "Legend"
-          // }]));
-        }
-
-
-      });
+      //         // Autocasts as new MediaContent()
+      //         type: "media",
+      //         mediaInfos: [{
+      //           title: "<b>Headshot</b>",
+      //           type: "image", // Autocasts as new ImageMediaInfo()
+      //           caption: "Headshot description here",
+      //           // Autocasts as new ImageMediaInfoValue()
+      //           value: {
+      //             sourceURL: "{headshot}"
+      //           }
+      //         }]
+      //       }]
+      //     }
 
 
 
-      const fullscreen = new Fullscreen({
-        label: 'Expand',
-        view: view
-      });
+
+      //   } else if (featureLayer.title.includes('Sections')){
+      //     // disable pop up from other layers
+      //     featureLayer.popupEnabled = false;
+      //     featureLayer.outFields = ['*'];
+
+      //     //console.log(featureLayer);
+      //     view.whenLayerView(featureLayer).then(async (layerView) => {
+
+      //       // // after all features are loaaded           
+      //       await reactiveUtils.whenOnce(() => !layerView.updating);
+
+      //       //console.log(layerView);
+      //       layerView.queryFeatures({              
+      //         outFields: ['OBJECTID','id', 'name'],
+      //         returnGeometry: true
+      //       }).then(async (response) => {
+
+      //         setCemeterySections(response.features.map(feature => ({
+      //           ...feature.attributes,        
+      //           center: feature.geometry ? [feature.geometry.centroid.longitude, feature.geometry.centroid.latitude] : null,
+      //           title: feature.attributes.name
+      //         })));              
+
+      //       }
+      //       );
+      //     });
+      //     // legendValues.push(legendValues.concat([{
+      //     //   layer: featureLayer,
+      //     //   title: "Legend"
+      //     // }]));
+      //   }
+
+
+      // });
+
+
+
+      // const fullscreen = new Fullscreen({
+      //   label: 'Expand',
+      //   view: view
+      // });
 
       
 
 
-      for (let i = 0; i < helpButtons.length; i++) {
-        const helpButton = document.createElement("button");
-        helpButton.innerHTML = helpButtons[i].text;
-        helpButton.id = helpButtons[i].id;
-        helpButton.classList.add("esri-widget", "esri-widget--button", "esri-interactive", "esri-reset-button");
-        helpButton.addEventListener("click", helpButtons[i].action);
-        view.ui.add(helpButton, "top-left");
-        helpButtons[i].element = helpButton;            
-      }
+      // for (let i = 0; i < helpButtons.length; i++) {
+      //   const helpButton = document.createElement("button");
+      //   helpButton.innerHTML = helpButtons[i].text;
+      //   helpButton.id = helpButtons[i].id;
+      //   helpButton.classList.add("esri-widget", "esri-widget--button", "esri-interactive", "esri-reset-button");
+      //   helpButton.addEventListener("click", helpButtons[i].action);
+      //   view.ui.add(helpButton, "top-left");
+      //   helpButtons[i].element = helpButton;            
+      // }
       
 
   
 
-      document.addEventListener("fullscreenchange", function() {
-        helpButtons[0].element.style.display = document.fullscreenElement ? 'none' : 'block';
+      // document.addEventListener("fullscreenchange", function() {
+      //   helpButtons[0].element.style.display = document.fullscreenElement ? 'none' : 'block';
         
-      });
+      // });
 
       
 
-      const legend = new Legend({
-        view: view,
-        layerInfos: legendValues[0]
-      });
+      // const legend = new Legend({
+      //   view: view,
+      //   layerInfos: legendValues[0]
+      // });
 
-      view.ui.add(fullscreen, "top-right");
-      view.ui.add(legend, "bottom-left");
-
+      // view.ui.add(fullscreen, "top-right");
+      // view.ui.add(legend, "bottom-left");
+      // hide zoom
+      // disable zoom
+      
     });
 
     
